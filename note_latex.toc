@@ -19,7 +19,7 @@
 \contentsline {subsubsection}{（2）凸集的定义}{12}{subsubsection*.6}%
 \contentsline {subsection}{\numberline {1.6.2}与仿射集合的关系}{13}{subsection.1.6.2}%
 \contentsline {subsection}{\numberline {1.6.3}重要概念：凸包（Convex Hull）}{13}{subsection.1.6.3}%
-\contentsline {subsection}{\numberline {1.6.4}典型实例}{13}{subsection.1.6.4}%
+\contentsline {subsection}{\numberline {1.6.4}典型例子}{13}{subsection.1.6.4}%
 \contentsline {section}{\numberline {1.7}锥（Cones）与凸锥（Convex Cones）}{13}{section.1.7}%
 \contentsline {subsection}{\numberline {1.7.1}核心定义：锥与凸锥}{13}{subsection.1.7.1}%
 \contentsline {subsubsection}{（1）锥的定义}{13}{subsubsection*.7}%
