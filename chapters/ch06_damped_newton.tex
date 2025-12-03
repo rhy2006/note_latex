@@ -1,0 +1,335 @@
+\chapter{阻尼牛顿法}
+
+\section{牛顿法复习}
+
+这是牛顿法区别于梯度下降的核心，用二次函数拟合目标函数局部形态：
+\[
+f(x+\Delta) \approx f(x) + \nabla f(x)^\top \Delta + \frac{1}{2}\Delta^\top H(x) \Delta
+\]
+
+对二次近似函数求极值（导数为0），解出的搜索方向即“牛顿步”：
+\[
+\Delta_{nt} = -H(x)^{-1} \nabla f(x)
+\]
+
+\begin{itemize}
+    \item \textbf{作用}：直接给出使局部二次函数最小的方向，无需像梯度下降那样手动调整步长（理论上步长为1时局部最优）。
+    \item \textbf{前提}：$H(x) \succ 0$（Hessian正定），保证解唯一且为最小值点。
+\end{itemize}
+
+通过梯度与牛顿步的内积，证明牛顿步是“有效下降方向”：
+\[
+\nabla f(x)^\top \Delta_{nt} = -\nabla f(x)^\top H(x)^{-1} \nabla f(x) < 0
+\]
+
+\begin{itemize}
+    \item \textbf{作用}：确保沿牛顿步迭代时，目标函数值会减小（内积$<0$，方向与梯度相反且符合曲率）。
+    \item \textbf{关键}：因 $H(x) \succ 0$，其逆矩阵也正定，故 $\nabla f(x)^\top H(x)^{-1} \nabla f(x) > 0$，最终内积为负。
+\end{itemize}
+
+靠近最优解 $x^*$ 时，迭代误差呈“平方级”减小，收敛速度远快于梯度下降：
+\[
+\| x_{k+1} - x^* \| \leq C \cdot \| x_k - x^* \|^2 \quad (C>0)
+\]
+
+\begin{itemize}
+    \item \textbf{作用}：体现牛顿法的核心优势——一旦进入“局部收敛域”，迭代会快速收敛到最优解。
+    \item \textbf{前提}：$H(x)$ 在 $x^*$ 邻域 Lipschitz 连续，且初始点 $x^{(0)}$ 足够靠近 $x^*$。
+\end{itemize}
+
+\section{阻尼牛顿法}
+
+阻尼牛顿法（Damped Newton Method）是为解决\textbf{纯牛顿法在远离最优解时可能不下降、发散}的问题而提出的改进方法，核心思路是：\textbf{保留牛顿方向的优势，通过引入线搜索（Line Search）确定合适的步长}，而非纯牛顿法中默认的步长1，从而保证每次迭代都能使目标函数值下降，兼顾“局部快速收敛”与“全局有效下降”。
+
+\subsection{纯牛顿法的局限性（阻尼牛顿法的必要性）}
+纯牛顿法的迭代公式为 $x_{k+1} = x_k + \Delta_{nt}$（步长固定为1），但存在两个关键问题：
+\begin{enumerate}
+    \item \textbf{Hessian矩阵非正定}：当 $H(x_k)$ 不正定时，牛顿步 $\Delta_{nt} = -H(x_k)^{-1}\nabla f(x_k)$ 可能不是下降方向（甚至是上升方向），导致 $f(x_{k+1}) > f(x_k)$。
+    \item \textbf{步长1过大}：即使 $H(x_k)$ 正定（牛顿步是下降方向），但远离最优解时，二次近似的误差较大，步长1可能导致迭代点“迈过”最优解，反而使函数值上升。
+\end{enumerate}
+
+\subsection{阻尼牛顿法的核心改进：牛顿方向 + 线搜索}
+阻尼牛顿法保留“牛顿步”作为搜索方向（利用二阶信息的高效性），但通过\textbf{线搜索}动态调整步长 $\alpha_k$（$\alpha_k > 0$），确保每次迭代满足 $f(x_{k+1}) < f(x_k)$。
+
+\textbf{迭代公式：}
+\[
+x_{k+1} = x_k + \alpha_k \cdot \Delta_{nt}
+\]
+其中：
+\begin{itemize}
+    \item $\Delta_{nt} = -H(x_k)^{-1}\nabla f(x_k)$ 是牛顿方向（与纯牛顿法一致）；
+    \item $\alpha_k$ 是通过线搜索确定的步长（核心改进点，替代固定步长1）。
+\end{itemize}
+
+\subsection{线搜索：如何确定步长 $\alpha_k$？}
+线搜索的目标是找到最小的 $\alpha_k$（通常从1开始尝试），使得目标函数值“充分下降”。常用准则为\textbf{Armijo准则}（保证下降性的同时避免步长过小）：
+
+\begin{definition}[Armijo准则]
+Armijo准则（Armijo Criterion）是\textbf{线搜索（Line Search）中用于确定合适步长}的经典准则。
+
+设当前迭代点为 $x_k$，搜索方向为 $d_k$（需满足“下降方向”，即 $\nabla f(x_k)^\top d_k < 0$），步长为 $\alpha > 0$。Armijo准则要求步长 $\alpha$ 满足：
+\[
+f(x_k + \alpha \cdot d_k) \leq f(x_k) + c \cdot \alpha \cdot \nabla f(x_k)^\top d_k
+\]
+其中：
+\begin{itemize}
+    \item $f(\cdot)$ 是目标函数；
+    \item $\nabla f(x_k)$ 是 $f$ 在 $x_k$ 处的梯度；
+    \item $c$ 是预设常数，满足 $0 < c < 1$（通常取 $c=10^{-4}$，控制“最小可接受的下降量”）。
+\end{itemize}
+\end{definition}
+
+\textbf{实际计算步骤（回溯线搜索）：}
+\begin{enumerate}
+    \item 初始尝试步长 $\alpha = 1$（纯牛顿法的默认步长，靠近最优解时通常有效）；
+    \item 检查是否满足 Armijo 准则：若 $f(x_k + \alpha d_k) \leq f(x_k) + c \cdot \alpha \cdot \nabla f(x_k)^\top d_k$，则接受该 $\alpha$；
+    \item 若不满足，缩小步长（如乘以收缩因子 $\beta$，$0 < \beta < 1$，常用 $\beta=0.5$），即 $\alpha = \beta \cdot \alpha$，重复步骤2；
+    \item 直到找到满足准则的 $\alpha$（理论上，因 $d_k$ 是下降方向，当 $\alpha \to 0$ 时准则必然满足，故一定能找到）。
+\end{enumerate}
+
+对于阻尼牛顿法，步长 $\alpha_k$ 需满足：
+\[
+f(x_k + \alpha_k \Delta_{nt}) \leq f(x_k) + c \cdot \alpha_k \cdot \nabla f(x_k)^\top \Delta_{nt}
+\]
+
+\textbf{说明：}
+\begin{itemize}
+    \item 不等式右边是函数值的“预期下降量”（基于一阶近似），左边是实际下降量。
+    \item 因牛顿步是下降方向（若 $H$ 正定，则 $\nabla f(x_k)^\top \Delta_{nt} < 0$），$c \cdot \alpha_k \cdot (\text{负数})$ 会使右边小于 $f(x_k)$，从而强制左边（实际函数值）必须下降。
+    \item 若 $\alpha=1$ 满足 Armijo 准则，则直接使用（接近最优解时通常成立，保持二次收敛）；否则按比例缩小 $\alpha$（如乘以0.5），直到满足条件。
+\end{itemize}
+
+\subsection{阻尼牛顿法的优势}
+\begin{enumerate}
+    \item \textbf{全局下降保证}：通过线搜索，无论 $H(x_k)$ 是否正定（即使牛顿步不是下降方向，线搜索会筛选出使函数下降的步长），都能确保 $f(x_{k+1}) < f(x_k)$，避免发散。
+    \item \textbf{保留局部快速收敛}：当迭代点靠近最优解 $x^*$ 时，二次近似误差很小，$\alpha_k$ 会趋近于1，此时阻尼牛顿法退化为纯牛顿法，仍保持二次收敛速度。
+    \item \textbf{适用性更广}：相比纯牛顿法，对初始点的要求更低（无需“足够靠近最优解”），在非凸问题或远离最优解的场景中更稳定。
+\end{enumerate}
+
+\subsection{阻尼牛顿法的步骤总结}
+\begin{algorithm}[阻尼牛顿法]
+\begin{enumerate}
+    \item 初始化迭代点 $x_0$，设置精度阈值 $\epsilon > 0$；
+    \item 计算梯度 $\nabla f(x_k)$，若 $\|\nabla f(x_k)\| < \epsilon$，停止迭代（已收敛）；
+    \item 计算 Hessian 矩阵 $H(x_k)$，求解牛顿步 $\Delta_{nt} = -H(x_k)^{-1}\nabla f(x_k)$；
+    \item 通过 Armijo 准则线搜索确定步长 $\alpha_k$；
+    \item 更新迭代点：$x_{k+1} = x_k + \alpha_k \Delta_{nt}$，返回步骤2。
+\end{enumerate}
+\end{algorithm}
+
+简言之，阻尼牛顿法通过“方向用牛顿（高效），步长靠搜索（稳定）”的策略，完美弥补了纯牛顿法的缺陷，是实际中更常用的牛顿类优化方法。
+
+\section{阻尼牛顿法性质}
+
+\subsection{一些假设}
+
+\begin{itemize}
+    \item (A1) $ f \in C^2(\mathbb{R}^n) $，且梯度 \textbf{Lipschitz连续}：存在常数 $ L > 0 $ 使
+    \[ \|\nabla f(x) - \nabla f(y)\| \leq L\|x - y\|, \quad \forall x, y. \]
+    等价于 $ f $ 为 $ L $-光滑（$ L $-smooth）。
+    \item (A2) $ f $ \textbf{下有界}：$ \inf_x f(x) > -\infty $。
+    \item (A3) 方向矩阵 \textbf{一致有界且正定}：存在常数 $ 0 < m \leq M < \infty $，对所有 $ k $ 有
+    \[ mI \preceq H_k \preceq MI. \]
+    （若直接用 Hessian，则这相当于全局强凸与曲率上界；在一般非凸情形，可通过\textbf{正定化}保证。）
+    \item (A4) 步长 $ \alpha_k $ 由\textbf{回溯}满足 Armijo 条件（或更强的 Wolfe 条件）。
+\end{itemize}
+
+\subsection{全局收敛到临界点}
+
+要证明阻尼牛顿法的\textbf{全局收敛性}（$\|\nabla f(x_k)\| \to 0$），我们基于上述两个引理和假设(A1)-(A4)，分步骤推导：
+
+\begin{lemma}[牛顿方向的下降性与有界性]
+设 $g_k = \nabla f(x_k)$，牛顿方向 $p_k = -H_k^{-1} g_k$（由 $H_k p_k = -g_k$ 定义）。
+
+\begin{enumerate}
+    \item \textbf{下降方向证明}：
+    因 $H_k \succ 0$，其逆矩阵 $H_k^{-1} \succ 0$，故
+    \[
+    -g_k^\top p_k = g_k^\top H_k^{-1} g_k \geq \frac{1}{\|H_k\|} \|g_k\|^2 \geq \frac{1}{M} \|g_k\|^2 > 0
+    \]
+    这说明 $p_k$ 是\textbf{下降方向}（梯度与方向的内积为正，即方向与负梯度同向）。
+
+    \item \textbf{方向有界性与夹角估计}：
+    由 $H_k \succeq mI$，得 $\|H_k^{-1}\| \leq \frac{1}{m}$，因此
+    \[
+    \|p_k\| = \|H_k^{-1} g_k\| \leq \|H_k^{-1}\| \|g_k\| \leq \frac{1}{m} \|g_k\|
+    \]
+    方向与负梯度的夹角余弦为：
+    \[
+    \cos\theta_k = \frac{-g_k^\top p_k}{\|g_k\| \|p_k\|} \geq \frac{1/M}{1/m} = \frac{m}{M} > 0
+    \]
+    即方向与负梯度夹角远离 $90^\circ$，是“有效下降方向”。
+\end{enumerate}
+\end{lemma}
+
+\begin{lemma}[回溯线搜索的步长下界]
+设(A1)-(A3)成立，定义
+\[
+\alpha_0 := \frac{2(1 - c_1) m^2}{L M}
+\]
+则回溯法接受的步长 $\alpha_k$ 满足
+\[
+\alpha_k \geq \underline{\alpha} := \min\{1, \beta \alpha_0\} > 0
+\]
+\end{lemma}
+
+\begin{proof}
+由 $f$ 是 $L$-光滑（A1），其泰勒展开满足上界：
+\[
+f(x_k + \alpha p_k) \leq f(x_k) + \alpha g_k^\top p_k + \frac{L}{2} \alpha^2 \|p_k\|^2
+\]
+Armijo 条件要求：
+\[
+f(x_k + \alpha p_k) \leq f(x_k) + c_1 \alpha g_k^\top p_k
+\]
+结合上式，只需：
+\[
+(1 - c_1) \alpha g_k^\top p_k + \frac{L}{2} \alpha^2 \|p_k\|^2 \leq 0
+\]
+令 $\delta_k = -g_k^\top p_k > 0$（因 $p_k$ 是下降方向），上式等价于：
+\[
+-(1 - c_1) \alpha \delta_k + \frac{L}{2} \alpha^2 \|p_k\|^2 \leq 0
+\]
+当 $\alpha \leq \frac{2(1 - c_1) \delta_k}{L \|p_k\|^2}$ 时成立。
+
+由引理1，$\delta_k \geq \frac{1}{M} \|g_k\|^2$ 且 $\|p_k\| \leq \frac{1}{m} \|g_k\|$，代入得：
+\[
+\frac{2(1 - c_1) \delta_k}{L \|p_k\|^2} \geq \frac{2(1 - c_1)(1/M)\|g_k\|^2}{L(1/m^2)\|g_k\|^2} = \frac{2(1 - c_1) m^2}{L M} = \alpha_0
+\]
+因此，当 $\alpha \leq \alpha_0$ 时 Armijo 条件必成立。
+
+回溯法从 $\alpha=1$ 开始按因子 $\beta$（$0 < \beta < 1$）递减，首次满足条件的步长不少于 $\beta \alpha_0$，故 $\alpha_k \geq \min\{1, \beta \alpha_0\} = \underline{\alpha} > 0$。
+\end{proof}
+
+\begin{theorem}[全局收敛性]
+在假设(A1)-(A4)下，阻尼牛顿法生成的序列满足 $\|\nabla f(x_k)\| \to 0$，即全局收敛。
+\end{theorem}
+
+\begin{proof}
+\begin{enumerate}
+    \item \textbf{函数值序列的单调性与有界性}：
+    由 Armijo 条件（A4），$f(x_{k+1}) < f(x_k)$，即 $\{f(x_k)\}$ 单调递减。又 $f$ 下有界（A2），故 $\{f(x_k)\}$ 收敛，即
+    \[
+    \lim_{k\to\infty} \left( f(x_k) - f(x_{k+1}) \right) = 0
+    \]
+
+    \item \textbf{结合步长下界与下降量的关系}：
+    由引理1，$-g_k^\top p_k \geq \frac{1}{M} \|g_k\|^2$；由引理2，$\alpha_k \geq \underline{\alpha} > 0$。结合 Armijo 条件的下降量：
+    \[
+    f(x_k) - f(x_{k+1}) \geq c_1 \alpha_k (-g_k^\top p_k) \geq c_1 \underline{\alpha} \cdot \frac{1}{M} \|g_k\|^2
+    \]
+
+    \item \textbf{级数收敛推导出梯度范数收敛}：
+    由于 $\sum_{k=0}^\infty \left( f(x_k) - f(x_{k+1}) \right)$ 收敛，其通项必须趋于0，即
+    \[
+    \lim_{k\to\infty} \|g_k\|^2 = \lim_{k\to\infty} \|\nabla f(x_k)\|^2 = 0
+    \]
+    因此
+    \[
+    \lim_{k\to\infty} \|\nabla f(x_k)\| = 0
+    \]
+\end{enumerate}
+\end{proof}
+
+\subsection{局部收敛阶段的退化}
+
+这部分内容是在\textbf{分析阻尼牛顿法在“局部收敛阶段”的行为}，核心是证明：当迭代点足够靠近最优解时，阻尼牛顿法的步长会恢复为 $\alpha_k = 1$（即“单位步”，退化为纯牛顿法），从而\textbf{恢复局部二次收敛的快速速率}。
+
+\begin{lemma}
+目的是给出一个\textbf{充分条件}，使得步长 $\alpha_k = 1$ 满足 Armijo 条件（即无需缩小步长，直接用纯牛顿步迭代）。
+
+\begin{itemize}
+    \item \textbf{条件}：若牛顿步 $p_k = -H_k^{-1}g_k$（$g_k = \nabla f(x_k)$）满足
+    \[ \|p_k\| \leq \frac{3(1 - 2c_1)}{L_H} \lambda_{\min}(H_k), \quad c_1 \in (0, \frac{1}{2}) \]
+    则 $\alpha_k = 1$ 满足 Armijo 条件。
+    \item \textbf{意义}：当该条件成立时，阻尼牛顿法的步长不再需要“回溯缩小”，直接用纯牛顿步迭代，从而继承纯牛顿法的\textbf{局部二次收敛速率}。
+\end{itemize}
+\end{lemma}
+
+通过\textbf{带三阶余项的泰勒展开}分析函数值变化，验证 $\alpha=1$ 时 Armijo 条件成立：
+\begin{itemize}
+    \item 对 $f(x_k + p_k)$ 做三阶泰勒展开（余项由 Hessian 的 Lipschitz 常数 $L_H$ 控制）：
+    \[ f(x_k + p_k) \leq f(x_k) + g_k^\top p_k + \frac{1}{2} p_k^\top H_k p_k + \frac{L_H}{6} \|p_k\|^3 \]
+    \item 代入牛顿步的定义 $g_k = -H_k p_k$，化简得：
+    \[ f(x_k + p_k) \leq f(x_k) - \frac{1}{2} p_k^\top H_k p_k + \frac{L_H}{6} \|p_k\|^3 \]
+    \item 对比 Armijo 条件的要求（$f(x_k + p_k) \leq f(x_k) - c_1 p_k^\top H_k p_k$），推导得：当
+    \[ \left( \frac{1}{2} - c_1 \right) \lambda_{\min}(H_k) \|p_k\|^2 \geq \frac{L_H}{6} \|p_k\|^3 \]
+    时，Armijo 条件成立。整理后即得到引理中的条件 $\|p_k\| \leq \frac{3(1 - 2c_1)}{L_H} \lambda_{\min}(H_k)$。
+\end{itemize}
+
+当迭代点足够靠近最优解 $x^*$ 时：
+\begin{itemize}
+    \item 牛顿步的长度 $\|p_k\| = O(\|e_k\|)$（$e_k = x_k - x^*$ 是迭代误差），且 Hessian 的最小特征值 $\lambda_{\min}(H_k) \to \lambda_{\min}(H^*)$（因 Hessian 在邻域 Lipschitz 连续）。
+    \item 此时引理的条件会被满足，回溯线搜索将以 $\alpha_k = 1$ 终止，迭代退化为\textbf{纯牛顿步}：$x_{k+1} = x_k + p_k$。
+    \item 进而恢复纯牛顿法的\textbf{局部二次收敛速率}，误差满足：
+    \[ \|e_{k+1}\| \leq C \|e_k\|^2, \quad C = \frac{L_H}{2m} \]
+\end{itemize}
+
+这部分内容的核心是\textbf{桥接阻尼牛顿法的“全局收敛稳定性”与纯牛顿法的“局部二次收敛快速性”}：通过证明“局部邻域内步长恢复为1”，说明阻尼牛顿法在全局收敛后，会快速进入二次收敛阶段，从而兼具“全局稳定下降”和“局部快速收敛”的优势。
+
+\section{非显式求逆方法}
+
+\subsection{Cholesky 分解（Cholesky Decomposition）}
+
+\textbf{定义}：
+若矩阵 $ A \in \mathbb{R}^{n \times n} $ 是\textbf{对称正定矩阵（symmetric positive definite）}，则存在唯一的下三角矩阵 $ L $ 满足：
+\[
+A = L L^{\mathrm{T}}
+\]
+其中 $ L $ 的对角元素全为正。
+
+\textbf{含义}：
+\begin{itemize}
+    \item 把正定矩阵看作“平方”出来的结果。
+    \item 等价于高斯消元的稳定版本。
+    \item 数值优化中，常用于求解 $ A\mathbf{x} = \mathbf{b} $ 时避免直接求逆：
+    \[
+    L L^{\mathrm{T}} \mathbf{x} = \mathbf{b} \Rightarrow L \mathbf{y} = \mathbf{b},\ L^{\mathrm{T}} \mathbf{x} = \mathbf{y}
+    \]
+\end{itemize}
+
+\textbf{计算方式}：
+对每个元素递推：
+\[
+L_{ii} = \sqrt{A_{ii} - \sum_{k=1}^{i-1} L_{ik}^2}, \quad
+L_{ij} = \frac{1}{L_{jj}}\Big(A_{ij} - \sum_{k=1}^{j-1} L_{ik}L_{jk}\Big)\ (i>j)
+\]
+
+\textbf{条件}：
+必须是正定矩阵，否则根号项出现负数，分解失败。
+
+\subsection{LDLᵀ 分解（LDL Decomposition）}
+
+\textbf{定义}：
+若矩阵 $ A \in \mathbb{R}^{n \times n} $ 是\textbf{对称矩阵}（不要求正定），则可以分解为：
+\[
+A = L D L^{\mathrm{T}}
+\]
+其中：
+\begin{itemize}
+    \item $ L $ 是单位下三角矩阵（对角元为 1），
+    \item $ D $ 是对角矩阵（可以含正或负元素）。
+\end{itemize}
+
+\textbf{含义}：
+\begin{itemize}
+    \item 是对称矩阵的广义 Cholesky 分解。
+    \item 适用于\textbf{半正定或不定矩阵}，不会出现在 Cholesky 分解中那样的平方根问题。
+    \item 若 $ A $ 正定，则 $ D $ 全为正，退化为标准 Cholesky：
+    \[
+    A = (L \sqrt{D})(L \sqrt{D})^{\mathrm{T}}
+    \]
+\end{itemize}
+
+\textbf{算法形式}：
+递推式：
+\[
+D_{jj} = A_{jj} - \sum_{k=1}^{j-1} L_{jk}^2 D_{kk}, \quad
+L_{ij} = \frac{1}{D_{jj}}\Big(A_{ij} - \sum_{k=1}^{j-1} L_{ik} D_{kk} L_{jk}\Big)
+\]
+
+\textbf{优点}：
+\begin{itemize}
+    \item 不需要取平方根，数值更稳定。
+    \item 可处理不定矩阵。
+\end{itemize}

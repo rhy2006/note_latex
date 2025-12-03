@@ -1,0 +1,109 @@
+\relax 
+\providecommand\zref@newlabel[2]{}
+\providecommand\hyper@newdestlabel[2]{}
+\@writefile{toc}{\contentsline {chapter}{\numberline {第四章\hspace  {.3em}}随机梯度下降（Stochastic Gradient Descent, SGD）}{39}{chapter.4}\protected@file@percent }
+\@writefile{lof}{\addvspace {10.0pt}}
+\@writefile{lot}{\addvspace {10.0pt}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}随机梯度下降基础}{39}{section.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.1}核心思路：用“部分数据”估算梯度}{39}{subsection.4.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.2}完整更新流程}{39}{subsection.4.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.3}关键超参数}{39}{subsection.4.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}一个随机估计问题}{40}{section.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}有限样本下的均值计算}{40}{subsection.4.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}前后均值的递推关系}{40}{subsection.4.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.3}均值收敛的条件}{40}{subsection.4.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.3}Robbins-Monro（RM）算法}{41}{section.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.1}RM算法的目标}{41}{subsection.4.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.2}RM算法的迭代公式}{41}{subsection.4.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3.3}RM算法的收敛条件}{41}{subsection.4.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.4}SGD之问：为何能够收敛？}{41}{section.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4.1}设定与记号}{42}{subsection.4.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4.2}收敛性证明的核心假设}{42}{subsection.4.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4.3}收敛性结论}{43}{subsection.4.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{结论一：几乎处处收敛（基于Robbins–Siegmund引理）}{43}{subsubsection*.75}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{结论二：强凸下的收敛速率与Polyak–Ruppert平均}{44}{subsubsection*.76}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4.4}非强凸场景下的SGD收敛性（仅凸/一般非凸）}{45}{subsection.4.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1. 仅凸场景（无强凸性，仅满足凸性）}{45}{subsubsection*.77}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2. 一般非凸场景（无凸性，仅满足L-平滑）}{45}{subsubsection*.78}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3. 非强凸场景与强凸场景的核心差异}{45}{subsubsection*.79}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.1}{\ignorespaces 不同场景下的收敛特性对比}}{46}{table.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4.5}两种不同目标下的步长设计及收敛策略差异}{46}{subsection.4.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1. OGD/Regret（在线学习/长期平均性能）}{46}{subsubsection*.80}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2. RM/SA（Robbins–Monro / Stochastic Approximation）}{46}{subsubsection*.81}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3. 折中 / 统一策略}{46}{subsubsection*.82}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.5}从随机估计到动力学}{47}{section.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5.1}从GD到ODE：离散更新是梯度流的“显式欧拉积分”}{47}{subsection.4.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1.1 离散更新与时间标度定义}{47}{subsubsection*.83}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1.2 连续极限：从离散更新到梯度流ODE}{47}{subsubsection*.84}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1.3 数值稳定性与曲率的关系}{48}{subsubsection*.85}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5.2}从SGD到SDE：扩散极限与朗之万动力学}{48}{subsection.4.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2.1 噪声分解：随机梯度的构成}{48}{subsubsection*.86}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2.2 扩散极限：从离散SGD到SDE（欧拉–丸山连续化）}{49}{subsubsection*.87}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2.3 两类极限：消噪极限与扩散极限}{49}{subsubsection*.88}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2.4 Fokker–Planck视角：参数分布的演化}{49}{subsubsection*.89}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5.3}局部二次近似与OU过程：常步长下的方差-曲率权衡}{50}{subsection.4.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3.1 局部二次近似}{50}{subsubsection*.90}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3.2 OU过程与平稳协方差}{50}{subsubsection*.91}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3.3 核心启发（B）：“宽谷偏好”的物理解释}{50}{subsubsection*.92}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5.4}学习率、批量与“温度”的定量关系}{51}{subsection.4.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{4.1 小批量梯度的方差尺度}{51}{subsubsection*.93}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{4.2 有效温度与“噪声刻度”}{51}{subsubsection*.94}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5.5}训练策略：将动力学结论落地到实践}{51}{subsection.4.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5.6}动力学近似的失效场景}{52}{subsection.4.5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5.7}核心关系总结}{52}{subsection.4.5.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.2}{\ignorespaces 离散算法与连续动力学模型的对应关系}}{52}{table.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4.6}SGD之问：为什么需要动量？}{53}{section.4.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6.1}从SGD出发：我们到底缺什么？}{53}{subsection.4.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6.2}Heavy-Ball（HB）：用“惯性”优化SGD的核心痛点}{54}{subsection.4.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{两种等价实现形式}{54}{subsubsection*.95}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Heavy-Ball为什么有效？（基于一维/特征方向的直觉）}{54}{subsubsection*.96}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{局限性}{54}{subsubsection*.97}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6.3}Nesterov（NAG）：“前瞻-校正”实现更稳健的加速}{55}{subsection.4.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3.1 两种常见实现形式}{55}{subsubsection*.98}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Nesterov为什么更优？（核心是“前瞻-校正”）}{55}{subsubsection*.99}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6.4}HB与NAG的噪声鲁棒性对比}{55}{subsection.4.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6.5}实践选择：何时用HB，何时用NAG？}{55}{subsection.4.6.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4.3}{\ignorespaces HB与NAG的选择指南}}{56}{table.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6.6}核心总结}{56}{subsection.4.6.6}\protected@file@percent }
+\@setckpt{chapters/ch04_sgd}{
+\setcounter{page}{57}
+\setcounter{equation}{0}
+\setcounter{enumi}{3}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{0}
+\setcounter{chapter}{4}
+\setcounter{section}{6}
+\setcounter{subsection}{6}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{0}
+\setcounter{table}{3}
+\setcounter{parentequation}{0}
+\setcounter{mdf@globalstyle@cnt}{0}
+\setcounter{mdfcountframes}{0}
+\setcounter{mdf@env@i}{0}
+\setcounter{mdf@env@ii}{0}
+\setcounter{mdf@zref@counter}{0}
+\setcounter{float@type}{4}
+\setcounter{LT@tables}{0}
+\setcounter{LT@chunks}{0}
+\setcounter{theoreminner}{3}
+\setcounter{lemmainner}{1}
+\setcounter{propositioninner}{0}
+\setcounter{corollaryinner}{0}
+\setcounter{definitioninner}{0}
+\setcounter{exampleinner}{0}
+\setcounter{remarkinner}{2}
+\setcounter{algorithminner}{0}
+\setcounter{AM@survey}{0}
+\setcounter{section@level}{0}
+\setcounter{Item}{67}
+\setcounter{Hfootnote}{0}
+\setcounter{Hy@AnnotLevel}{0}
+\setcounter{bookmark@seq@number}{105}
+}

@@ -1,0 +1,300 @@
+\chapter{优化算法的评价}
+
+\section{预备知识与符号}
+
+\begin{itemize}
+    \item \textbf{目标函数}：$f: \mathbb{R}^n \to \mathbb{R}$，可微。
+    \item \textbf{L-光滑（Lipschitz梯度）}：存在$L > 0$使
+    \[
+    \|\nabla f(x) - \nabla f(y)\| \leq L\|x - y\|, \quad \forall x, y.
+    \]
+    \item \textbf{凸/强凸}：$f$凸；若存在$\mu > 0$使
+    \[
+    f(y) \geq f(x) + \nabla f(x)^\top (y - x) + \frac{\mu}{2}\|y - x\|^2,
+    \]
+    则$f$为$\mu$-强凸。
+    \item \textbf{PL（Polyak-Łojasiewicz）不等式}：存在$\mu > 0$使
+    \[
+    \frac{1}{2}\|\nabla f(x)\|^2 \geq \mu\left(f(x) - f^*\right), \quad \forall x.
+    \]
+    \textit{注}：PL $\nRightarrow$ 凸，但常见于过参数模型/深网络的局部区域。
+    \item \textbf{GD更新}：$x_{k+1} = x_k - \eta_k \nabla f(x_k)$，其中步长$\eta_k > 0$。
+\end{itemize}
+
+\section{基本工具：下降引理（Descent Lemma）}
+
+\begin{lemma}[下降引理]
+若函数$f$为$L$-光滑，则对任意$x, d$与$\eta > 0$，有：
+\[
+f(x + \eta d) \leq f(x) + \eta \nabla f(x)^\top d + \frac{L}{2}\eta^2 \|d\|^2
+\]
+\end{lemma}
+
+\begin{proof}
+由$L$-光滑性的定义，对任意$y$有：
+\[
+f(y) \leq f(x) + \nabla f(x)^\top (y - x) + \frac{L}{2}\|y - x\|^2
+\]
+令$y = x + \eta d$（即沿方向$d$步长$\eta$移动），代入后即得下降引理的不等式。
+\end{proof}
+
+\begin{corollary}[沿负梯度下降]
+取$d = -\nabla f(x)$（沿\textbf{负梯度方向}更新，梯度下降算法的核心思想），代入下降引理得：
+\[
+f(x - \eta \nabla f(x)) \leq f(x) - \left( \eta - \frac{L}{2}\eta^2 \right) \|\nabla f(x)\|^2
+\]
+
+进一步，当$0 < \eta \leq \frac{1}{L}$时，函数值\textbf{单调下降}，且有：
+\[
+f(x_{k+1}) \leq f(x_k) - \frac{\eta}{2} \|\nabla f(x_k)\|^2
+\]
+
+\begin{itemize}
+    \item 该推论明确了\textbf{梯度下降的下降性保证}：只要步长$\eta$满足$0 < \eta \leq \frac{1}{L}$，每一步迭代后目标函数值必严格减小，确保算法的"下降"特性。
+    \item 为\textbf{步长选择}提供了理论依据（步长不超过$\frac{1}{L}$时算法稳定下降），也为后续收敛速率分析奠定了基础。
+\end{itemize}
+\end{corollary}
+
+\section{基于Descent Lemma的四类典型收敛结果}
+
+\subsection{非凸 + L-光滑}
+
+由推论2.2，当$0 < \eta \leq \frac{1}{L}$时，梯度下降的单步迭代满足：
+\[
+f(x_{k+1}) \leq f(x_k) - \frac{\eta}{2} \|\nabla f(x_k)\|^2
+\]
+
+将$k = 0, 1, \dots, K-1$的不等式依次展开并累加：
+\begin{align*}
+f(x_1) &\leq f(x_0) - \frac{\eta}{2} \|\nabla f(x_0)\|^2 \\
+f(x_2) &\leq f(x_1) - \frac{\eta}{2} \|\nabla f(x_1)\|^2 \\
+&\vdots \\
+f(x_K) &\leq f(x_{K-1}) - \frac{\eta}{2} \|\nabla f(x_{K-1})\|^2
+\end{align*}
+将这些不等式左右两边分别相加，\textbf{中间项$f(x_1), f(x_2), \dots, f(x_{K-1})$会相互抵消}，最终得到：
+\[
+f(x_K) \leq f(x_0) - \frac{\eta}{2} \sum_{k=0}^{K-1} \|\nabla f(x_k)\|^2
+\]
+
+已知$f$下有界（即$f_{\text{inf}} = \inf_x f(x) > -\infty$），因此对任意$K$，有$f(x_K) \geq f_{\text{inf}}$。将其代入上式：
+\[
+f_{\text{inf}} \leq f(x_0) - \frac{\eta}{2} \sum_{k=0}^{K-1} \|\nabla f(x_k)\|^2
+\]
+整理得梯度范数平方和的上界：
+\[
+\sum_{k=0}^{K-1} \|\nabla f(x_k)\|^2 \leq \frac{2\left(f(x_0) - f_{\text{inf}}\right)}{\eta}
+\]
+
+将上式两边同时除以$K$，得到\textbf{平均梯度范数平方}的上界：
+\[
+\frac{1}{K} \sum_{k=0}^{K-1} \|\nabla f(x_k)\|^2 \leq \frac{2\left(f(x_0) - f_{\text{inf}}\right)}{\eta K}
+\]
+
+进一步分析\textbf{最小梯度范数}的量级：
+由于平均值不小于"集合中的最小值"（即$\frac{1}{K} \sum_{k=0}^{K-1} \|\nabla f(x_k)\|^2 \geq \min_{0 \leq k < K} \|\nabla f(x_k)\|^2$），因此：
+\[
+\min_{0 \leq k < K} \|\nabla f(x_k)\|^2 \leq \frac{2\left(f(x_0) - f_{\text{inf}}\right)}{\eta K} = O\left(\frac{1}{K}\right)
+\]
+
+该定理在\textbf{非凸深度学习场景}中具有关键价值：
+\begin{enumerate}
+    \item 即使损失函数非凸，只要满足L-光滑且下有界，梯度下降的\textbf{平均梯度范数会随迭代次数增加而趋于0}，说明算法能逐步逼近"驻点"（最优解的必要条件）。
+    \item 收敛速率为$O(1/K)$，明确了"迭代次数越多，平均梯度越小"的量化规律，为训练过程的收敛性分析提供了理论依据。
+    \item 解释了"为什么深度网络在梯度下降训练中能逐步收敛"——即使损失函数非凸，L-光滑性和下有界性确保了梯度的整体衰减趋势。
+\end{enumerate}
+
+\subsection{凸 + L-光滑}
+
+对\textbf{"凸且L-光滑函数"的梯度下降（GD）算法进行收敛性分析}，核心是推导"函数值次优量"与"解的平方距离差分"的关联不等式（即\textbf{望远镜技巧}的核心步骤）
+
+\begin{itemize}
+    \item \textbf{函数设定}：$f: \mathbb{R}^n \to \mathbb{R}$是\textbf{凸且L-光滑}的（即满足$\|\nabla f(y) - \nabla f(x)\| \leq L\|y - x\|$），最优解为$x^* \in \arg\min f$。
+    \item \textbf{算法设定}：梯度下降取\textbf{固定步长}$\eta = \frac{1}{L}$，迭代规则为$x_{k+1} = x_k - \frac{1}{L}\nabla f(x_k)$。
+    \item \textbf{基础工具}：
+    \begin{itemize}
+        \item 凸函数的一阶性质（3.2.a）：$f(y) \geq f(x) + \langle \nabla f(x), y - x \rangle$（凸函数的定义式，用于将"梯度内积"转化为"函数值差距"）。
+        \item 向量范数展开（3.2.c）：$\|a - c\|^2 = \|b - c\|^2 + 2\langle a - b, b - c \rangle + \|a - b\|^2$（用于对"解的距离"$\|x_{k+1} - x^*\|^2$做代数展开）。
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{步骤1：解的距离展开（3.2.d）}
+令$a = x_{k+1}$、$b = x_k$、$c = x^*$，结合梯度下降的更新式$x_{k+1} - x_k = -\frac{1}{L}\nabla f(x_k)$，代入范数展开式（3.2.c）得：
+\[
+\|x_{k+1} - x^*\|^2 = \|x_k - x^*\|^2 - \frac{2}{L}\langle \nabla f(x_k), x_k - x^* \rangle + \frac{1}{L^2}\|\nabla f(x_k)\|^2
+\]
+
+\subsubsection{步骤2：结合凸性，转化梯度内积为函数值差距}
+由凸函数的性质（3.2.b）：$f(x) - f^* \leq \langle \nabla f(x), x - x^* \rangle$，代入（3.2.d）得：
+\[
+\|x_{k+1} - x^*\|^2 \leq \|x_k - x^*\|^2 - \frac{2}{L}(f(x_k) - f^*) + \frac{1}{L^2}\|\nabla f(x_k)\|^2
+\]
+
+\subsubsection{步骤3：消去梯度范数，关联函数值下降量}
+利用L-光滑函数的"下降性质"，推导得：
+\[
+\frac{1}{L^2}\|\nabla f(x_k)\|^2 \leq \frac{2}{L}(f(x_k) - f(x_{k+1}))
+\]
+
+\subsubsection{步骤4：关键不等式（望远镜差分，3.2.g）}
+将（3.2.f）代回（3.2.e）并整理，最终得到：
+\[
+\frac{2}{L}(f(x_{k+1}) - f^*) \leq \|x_k - x^*\|^2 - \|x_{k+1} - x^*\|^2
+\]
+\textbf{意义}：这是"望远镜技巧"的核心——它将"函数值到最优的差距"与"解的距离的差分"直接关联。后续对$k$累加该不等式，可消去中间项，从而推导出\textbf{收敛速率}（如函数值次优量的$O(1/K)$速率）。
+
+\begin{theorem}[$O(1/k)$次优率]
+若$f$凸且$L$-光滑，取$\eta = \frac{1}{L}$，则
+\[
+f(x_k) - f^* \leq \frac{L}{2k}\|x_0 - x^*\|^2, \quad k \geq 1.
+\]
+\end{theorem}
+
+\begin{proof}[证明（望远镜技巧）]
+对$k = 0, \dots, T-1$求和，右侧望远镜展开：
+\[
+\frac{2}{L}\sum_{k=0}^{T-1} \left(f(x_{k+1}) - f^*\right) \leq \|x_0 - x^*\|^2 - \|x_T - x^*\|^2 \leq \|x_0 - x^*\|^2.
+\]
+
+因此
+\[
+\frac{1}{T}\sum_{k=1}^{T} \left(f(x_k) - f^*\right) \leq \frac{L}{2T}\|x_0 - x^*\|^2. \tag{3.2.h}
+\]
+
+又知$\{f(x_k)\}$单调不增，故
+\[
+f(x_T) - f^* \leq \frac{1}{T}\sum_{k=1}^{T} \left(f(x_k) - f^*\right) \leq \frac{L}{2T}\|x_0 - x^*\|^2.
+\]
+
+令$T = k$即得结论。
+
+\textbf{一般步长$\eta \in (0, 1/L]$:}
+
+完全同样的推导（把上文中的$1/L$换为一般$\eta$）给出
+\[
+f(x_k) - f^* \leq \frac{\|x_0 - x^*\|^2}{2\eta k}, \quad \text{取} \ \eta = \frac{1}{L} \text{恢复定理常数。} \tag{3.2.i}
+\]
+\end{proof}
+
+\subsection{$\mu$-强凸 + L-光滑：线性（几何）收敛}
+
+强凸与光滑结合下的梯度下降"线性收敛"
+
+\begin{theorem}
+若$f$为$\mu$-强凸且$L$-光滑，取$0 < \eta \leq \frac{2}{\mu + L}$，则
+\[
+\|x_{k+1} - x^*\|^2 \leq \rho^2 \|x_k - x^*\|^2, \quad \rho := \max\{1 - \eta\mu, |1 - \eta L|\} < 1,
+\]
+进而
+\[
+f(x_k) - f^* \leq \frac{L}{2} \rho^{2k} \|x_0 - x^*\|^2.
+\]
+\end{theorem}
+
+\begin{proof}[证明：从"梯度与Hessian"到"几何收缩"]
+我们先引入误差项$e_k := x_k - x^*$，梯度下降的更新式为$x_{k+1} = x_k - \eta \nabla f(x_k)$。
+
+\paragraph{第一步：Hessian的"平均积分表示"}
+由一维积分形式的平均Hessian，梯度的差可表示为：
+\[
+\nabla f(x_k) - \nabla f(x^*) = \left( \int_0^1 \nabla^2 f(x^* + t(x_k - x^*)) dt \right) (x_k - x^*) =: H_k e_k,
+\]
+其中$H_k$是对称矩阵，且满足$\mu I \preceq H_k \preceq L I$（强凸和L-光滑的核心体现：Hessian的特征值被$\mu$和$L$"夹逼"）。
+
+\begin{remark}[Hessian积分表示的推导]
+令$g(t) = \nabla f\left(x^* + t(x_k - x^*)\right)$，其中$t \in [0,1]$。
+\begin{itemize}
+    \item 当$t=0$时，$g(0) = \nabla f(x^*)$；
+    \item 当$t=1$时，$g(1) = \nabla f(x_k)$。
+\end{itemize}
+
+对$g(t)$关于$t$求导（利用\textbf{Hessian的定义}：$\nabla f$的导数是Hessian矩阵$\nabla^2 f$）：
+\[
+g'(t) = \nabla^2 f\left(x^* + t(x_k - x^*)\right) \cdot (x_k - x^*)
+\]
+根据\textbf{牛顿-莱布尼茨公式}（微积分基本定理），有：
+\[
+g(1) - g(0) = \int_0^1 g'(t) \, dt
+\]
+将$g(1) = \nabla f(x_k)$、$g(0) = \nabla f(x^*)$和$g'(t)$的表达式代入，即可得到：
+\[
+\nabla f(x_k) - \nabla f(x^*) = \left( \int_0^1 \nabla^2 f\left(x^* + t(x_k - x^*)\right) dt \right) (x_k - x^*)
+\]
+这一步的价值在于\textbf{将"梯度差"转化为"Hessian的积分平均形式"}，从而可以利用"$\mu$-强凸（Hessian下界$\mu I$）"和"L-光滑（Hessian上界$L I$）"的条件，分析误差项$x_k - x^*$的收缩性（即后续的几何收敛）。
+
+简单来说，它是"强凸+L-光滑"场景下\textbf{梯度下降线性收敛证明的"第一块基石"}——通过把梯度差和Hessian联系起来，我们才能量化误差的几何收缩速率。
+\end{remark}
+
+\paragraph{第二步：误差项的迭代收缩}
+将更新式代入误差项$e_{k+1} = x_{k+1} - x^*$，得：
+\[
+e_{k+1} = e_k - \eta (\nabla f(x_k) - \nabla f(x^*)) = (I - \eta H_k) e_k.
+\]
+
+由于$H_k$可正交对角化，矩阵$I - \eta H_k$的\textbf{谱范数}（即最大特征值的绝对值）由$H_k$的特征值范围决定。结合$\mu \leq \lambda(H_k) \leq L$，得：
+\[
+\|e_{k+1}\| \leq \max_{\lambda \in [\mu, L]} |1 - \eta \lambda| \cdot \|e_k\|.
+\]
+
+记$\rho := \max\{1 - \eta\mu, |1 - \eta L|\}$，当$0 < \eta \leq \frac{2}{\mu + L}$时，可验证$1 - \eta\mu < 1$且$|1 - \eta L| < 1$，故$\rho < 1$。因此误差项的平方满足\textbf{几何收缩}：
+\[
+\|e_{k+1}\|^2 \leq \rho^2 \|e_k\|^2.
+\]
+
+\paragraph{第三步：函数值次优量的收敛}
+迭代展开误差项得$\|e_k\|^2 \leq \rho^{2k} \|e_0\|^2$。再结合"上二次界"$f(x) - f^* \leq \frac{L}{2} \|x - x^*\|^2$，即可推出函数值次优量的几何收敛：
+\[
+f(x_k) - f^* \leq \frac{L}{2} \rho^{2k} \|x_0 - x^*\|^2.
+\]
+\end{proof}
+
+\subsubsection{最优步长的"黄金选择"}
+当取$\eta^* = \frac{2}{\mu + L}$时，两端点的绝对值相等：$|1 - \eta^* \mu| = |1 - \eta^* L| = \frac{L - \mu}{L + \mu}$，此时最优收缩因子$\rho^* = \frac{L - \mu}{L + \mu} = \frac{\kappa - 1}{\kappa + 1}$（其中$\kappa = \frac{L}{\mu}$是"条件数"，刻画强凸与光滑的平衡）。
+
+之前凸光滑场景是$O(1/k)$的\textbf{次线性收敛}，而这里强凸+光滑下是$\rho^{2k}$的\textbf{几何收敛}（也叫线性收敛）——前者是"慢慢悠悠逼近"，后者是"指数级收缩"，效率天差地别。这解释了为什么"强凸假设"能让优化算法"跑起来"。
+
+强凸（$\mu > 0$）让函数"长得更陡"，L-光滑（$L < \infty$）让函数"长得不突兀"。两者结合时，Hessian的特征值被"夹在$\mu$和$L$之间"，这才使得误差项能通过矩阵谱范数实现"几何收缩"。这种"刚柔并济"的结构，是线性收敛的核心密码。
+
+虽然深度学习中损失函数大多非强凸，但这个结论是\textbf{正则化、fine-tuning阶段}的理论参照——当模型接近收敛时，局部可能近似满足强凸性，此时梯度下降的收敛会呈现"加速特性"。同时，"最优步长$\eta^* = \frac{2}{\mu + L}$"也为自适应步长设计提供了灵感。
+
+\subsection{PL条件 + L-光滑：线性收敛（无需凸）}
+
+这部分聚焦\textbf{非凸场景下的线性收敛分析}，核心是通过"PL条件（替代凸性）+ L-光滑（保证梯度平滑）"的组合，证明梯度下降在非凸函数上也能实现线性收敛
+
+\begin{theorem}
+若$f$满足\textbf{PL条件}且\textbf{L-光滑}，取步长$\eta = \frac{1}{L}$，则
+\[
+f(x_{k+1}) - f^* \leq \left(1 - \frac{\mu}{L}\right)\left(f(x_k) - f^*\right).
+\]
+\end{theorem}
+
+PL（Polyak-Łojasiewicz）不等式定义：存在$\mu > 0$，使得对所有$x$，
+\[
+\frac{1}{2}\|\nabla f(x)\|^2 \geq \mu \left(f(x) - f^*\right), \quad \forall x.
+\]
+\begin{remark}[PL条件的意义]
+它把"梯度的大小"和"函数离最优值的差距（次优量$f(x)-f^*$）"直接关联，是"非凸场景下替代凸性"的关键——无需函数全局凸，只要局部满足该不等式，就能量化梯度与优化程度的关系。
+\end{remark}
+
+由L-光滑的"沿负梯度下降"推论，当$0 < \eta \leq \frac{1}{L}$时，梯度下降单步迭代满足：
+\[
+f(x - \eta \nabla f(x)) \leq f(x) - \frac{\eta}{2}\|\nabla f(x)\|^2.
+\]
+将步长$\eta = \frac{1}{L}$代入不等式，得：
+\[
+f(x_{k+1}) \leq f(x_k) - \frac{1}{2L}\|\nabla f(x_k)\|^2.
+\]
+
+再结合PL不等式$\frac{1}{2}\|\nabla f(x_k)\|^2 \geq \mu \left(f(x_k) - f^*\right)$，两边同乘$\frac{1}{L}$得：
+\[
+\frac{1}{2L}\|\nabla f(x_k)\|^2 \geq \frac{\mu}{L}\left(f(x_k) - f^*\right).
+\]
+
+将其代入函数值下降的不等式，整理后得到：
+\[
+f(x_{k+1}) - f^* \leq \left(1 - \frac{\mu}{L}\right)\left(f(x_k) - f^*\right).
+\]
+
+\begin{itemize}
+    \item \textbf{非凸场景的线性收敛突破}：无需凸性假设，仅靠"PL（梯度与次优量挂钩）+ L-光滑（梯度变化平滑）"，就能让函数次优量以\textbf{几何级数（线性速率）}收缩——这解释了"为什么非凸的深度模型训练能收敛到较好效果"（过参数化网络局部常满足PL条件）。
+    \item \textbf{条件的普适性}：PL条件比凸性弱，更贴合深度学习中损失函数的非凸特性，是分析非凸优化收敛性的核心工具之一。
+\end{itemize}

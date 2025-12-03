@@ -1,0 +1,516 @@
+\chapter{无约束优化问题}
+
+\numberwithin{equation}{subsection}
+
+\section{无约束优化问题}
+
+\subsection{问题基本形式}
+\begin{definition}[无约束优化问题]
+针对\textbf{凸且二阶可微}的目标函数，无约束优化问题的数学形式定义为：
+\begin{equation}
+\min f(x)
+\end{equation}
+其中，$f(x)$满足“凸性”与“二阶可微性”这两个核心前提假设。
+\end{definition}
+
+\subsection{最优性条件}
+\begin{proposition}[最优性条件]
+无约束优化问题达到最优解$x^*$的核心必要条件为：
+\begin{equation}
+\nabla f(x^*) = 0
+\end{equation}
+即最优解处函数的梯度（一阶导数）等于零向量；若该等式无法直接求解，则需通过迭代方法逼近最优解。
+\end{proposition}
+
+\subsection{核心求解框架（下山法迭代格式）}
+下山法通过迭代构造严格递减的函数值序列以逼近最优解，其数学化迭代流程如下：
+\begin{enumerate}
+    \item \textbf{初始设定}：给定初始迭代点$x^{(0)}$，初始化迭代次数$k=0$；
+    \item \textbf{方向选取}：确定第$k$次迭代的搜索方向$\Delta x^{(k)}$（后续需进一步优化方向选取规则）；
+    \item \textbf{步长选取}：确定第$k$次迭代的步长$\alpha > 0$（后续需进一步优化步长选取规则）；
+    \item \textbf{迭代更新}：按以下公式更新迭代点：
+    \begin{equation}
+    x^{(k+1)} = x^{(k)} + \alpha \Delta x^{(k)}
+    \end{equation}
+    同时更新迭代次数$k \leftarrow k+1$，且需满足函数值严格递减条件：
+    \begin{equation}
+    f(x^{(0)}) > f(x^{(1)}) > f(x^{(2)}) > \dots
+    \end{equation}
+\end{enumerate}
+
+综上，无约束优化问题的核心数学转化目标为：通过数学规则确定“搜索方向$\Delta x^{(k)}$”与“步长$\alpha$”，使上述迭代流程满足严格递减性并收敛至最优解。
+
+\section{搜索方向的确定}
+
+\subsection{视角1：线性化与下降条件}
+
+\begin{definition}[梯度L-Lipschitz条件]
+若函数$f$的梯度满足L-Lipschitz连续性，等价于：
+\begin{equation}
+\| \nabla f(x)-\nabla f(y)\| _{2} \leq L\| x-y\| _{2}
+\end{equation}
+其中$L$为Lipschitz常数，$\|\cdot\|_2$表示欧氏范数。
+\end{definition}
+
+\begin{proposition}[函数线性化不等式]
+利用基本定理与Cauchy–Schwarz公式，可推导出函数在点$x$处的线性化上界：
+\begin{equation}
+f(x+\Delta) \leq f(x)+\nabla f(x)^{\top} \Delta+\frac{L}{2}\| \Delta\| _{2}^{2}
+\end{equation}
+\end{proposition}
+
+\begin{proof}[推导：函数线性化不等式]
+\textbf{梯度L-Lipschitz连续性}（推导的基础，保证梯度变化有界）：
+\begin{equation}
+\|\nabla f(x) - \nabla f(x + t\Delta)\|_2 \leq L \cdot \|t\Delta\|_2 = L t \|\Delta\|_2 \quad (t \in [0,1])
+\end{equation}
+
+\textbf{多元微积分基本定理}：
+\begin{equation}
+f(x+\Delta) - f(x) = \int_{0}^{1} \nabla f\left(x + t\Delta\right)^{\top} \Delta \, dt
+\end{equation}
+
+\textbf{积分拆分与线性项提取}：
+\begin{equation}
+\int_{0}^{1} \nabla f(x + t\Delta)^{\top}\Delta dt = \nabla f(x)^{\top}\Delta \cdot \int_{0}^{1} dt + \int_{0}^{1} \left[\nabla f(x + t\Delta) - \nabla f(x)\right]^{\top}\Delta dt
+\end{equation}
+其中第一部分积分结果直接为线性项：
+\begin{equation}
+\nabla f(x)^{\top}\Delta \cdot \int_{0}^{1} dt = \nabla f(x)^{\top}\Delta
+\end{equation}
+
+\textbf{Cauchy-Schwarz不等式+L-Lipschitz条件}（控制第二部分积分，得到“二次项$\frac{L}{2}\|\Delta\|_2^2$”）：
+由Cauchy-Schwarz不等式：
+\begin{equation}
+\left[\nabla f(x + t\Delta) - \nabla f(x)\right]^{\top}\Delta \leq \|\nabla f(x + t\Delta) - \nabla f(x)\|_2 \cdot \|\Delta\|_2
+\end{equation}
+代入L-Lipschitz条件并积分：
+\begin{equation}
+\int_{0}^{1} \|\nabla f(x + t\Delta) - \nabla f(x)\|_2 \cdot \|\Delta\|_2 dt \leq \int_{0}^{1} L t \|\Delta\|_2^2 dt = \frac{L}{2}\|\Delta\|_2^2
+\end{equation}
+
+\textbf{合并得到最终不等式}：
+\begin{equation}
+f(x+\Delta) - f(x) \leq \nabla f(x)^{\top}\Delta + \frac{L}{2}\|\Delta\|_2^2 \implies f(x+\Delta) \leq f(x) + \nabla f(x)^{\top}\Delta + \frac{L}{2}\|\Delta\|_2^2
+\end{equation}
+\end{proof}
+
+\begin{definition}[下降方向]
+令$\Delta=\alpha p$（$\alpha>0$为步长，$p$为搜索方向），只要满足特定条件，就存在足够小的$\alpha>0$使函数值降低——这是下降方向的充要条件。其中，最自然的搜索方向选择为\textbf{负梯度方向}：
+\begin{equation}
+p_{gd}=-\nabla f(x)
+\end{equation}
+\end{definition}
+
+\subsection{视角2：一般范数下的“最速下降”}
+
+\begin{definition}[最速下降方向]
+对任意范数$\|\cdot\|$及其对应的对偶范数$\|\cdot\|_*$，“最速下降方向”需通过求解以下优化问题得到：
+\begin{equation}
+p^{*}=\arg \min _{\| d\| _{*} \leq 1} \nabla f(x)^{\top} d
+\end{equation}
+上述优化问题的解为：
+\begin{equation}
+p^{*}=-\frac{\nabla f(x)}{\| \nabla f(x)\| }
+\end{equation}
+\end{definition}
+
+\begin{example}[特殊范数案例]
+\begin{itemize}
+    \item 当使用\textbf{欧氏范数}时，对偶范数与原范数一致，此时$p^*$即为负梯度方向（与前文中结论一致）；
+    \item 若使用\textbf{Hessian度量}（定义为$\|d\|_{H(x)}=\sqrt{d^{\top} H(x) d}$，$H(x)$为函数$f$在$x$处的Hessian矩阵），则“最速”方向等价于Newton步（详见后续Newton法相关内容）。
+\end{itemize}
+\end{example}
+
+\begin{quote}
+\textit{解释：}
+函数$f$在点$x$沿方向$d$的\textbf{局部下降速度}，由梯度与方向的内积$\nabla f(x)^\top d$决定：
+\begin{itemize}
+    \item 内积越小（越负），函数沿$d$下降越快；
+    \item 因此“找最速下降方向”，等价于在约束$\|d\|_* \leq 1$（对偶范数单位球）下，求解：
+    \begin{equation}
+    p^* = \arg\min_{\|d\|_* \leq 1} \nabla f(x)^\top d
+    \end{equation}
+\end{itemize}
+设$a = \nabla f(x)$，需先确定$a^\top d$（即$\nabla f(x)^\top d$）的最小可能值。
+根据\textbf{对偶范数的核心性质}：对任意满足$\|d\|_* \leq 1$的$d$，有：
+\begin{equation}
+a^\top d \geq -\|a\|
+\end{equation}
+方向$p^* = -\frac{\nabla f(x)}{\|\nabla f(x)\|}$，既满足对偶范数单位球约束，又能让内积达到最小（下降最快），因此它就是单位球上的最速下降方向。
+\end{quote}
+
+\subsection{预条件化的作用}
+
+\textbf{最速下降方向是 “当前范数下，使内积$\nabla f(x)^\top d$最小（下降最快）的方向”}。预条件化的本质是\textbf{改变 “范数度量标准”}：不再用欧氏范数，而是用 “预条件范数”。
+
+\begin{definition}[预条件化]
+考虑二次目标函数 $f(x)=\frac{1}{2} x^{\top} A x-b^{\top} x \quad (A \succ 0)$，其等高线为椭圆。
+通过坐标变换$y=A^{1/2} x$，可将原椭圆等高线“拉成”圆形（即消除椭圆的“细长”特性），这一过程称为\textbf{预条件化}。
+\end{definition}
+
+\textbf{直观意义}：预条件化相当于将优化问题中的“细长谷”地形转化为“圆形洼地”，从而缓解负梯度下降时容易出现的“楼梯形”迂回路径，提升迭代效率。
+
+\section{如何确定步长}
+
+设线搜索的核心目标函数为$\phi(\alpha) = f(x + \alpha p)$，其中$x$为当前迭代点，$p$为已确定的搜索方向，$\alpha \geq 0$为待求解的步长（需满足函数值下降条件$f(x + \alpha p) < f(x)$）。以下分别介绍三种主流线搜索方法：
+
+\subsection{精确线搜索（Exact Line Search）}
+
+\begin{definition}[精确线搜索]
+精确线搜索直接求解“使$\phi(\alpha)$最小化”的步长$\alpha^*$，数学表达为：
+\begin{equation}
+\alpha^{*} = \arg \min _{\alpha \geq 0} \phi(\alpha)
+\end{equation}
+其目标是找到“当前方向下最优的步长”，理论上能让单次迭代的函数值下降幅度最大。
+\end{definition}
+
+\begin{example}[二次函数的封闭解]
+若目标函数为二次函数$f(x) = \frac{1}{2} x^\top A x - b^\top x$（其中$A \succ 0$，即$A$为正定矩阵），且搜索方向$p = -\nabla f(x) = -g$（$g = \nabla f(x)$为当前梯度），则精确线搜索的步长有\textbf{封闭解}：
+\begin{equation}
+\alpha^{*} = \frac{g^\top g}{g^\top A g}
+\end{equation}
+该解的本质是：在二次函数的近似下，使“更新后的梯度$\nabla f(x + \alpha p)$与搜索方向$p$垂直”（即一次更新在二次近似意义上最有效），等价于求解$\arg \min _{\alpha} \|g - \alpha A g\|_2^2$。
+\end{example}
+
+\textbf{与固定步长的比较}：在函数满足 \textbf{L-光滑性}（梯度L-Lipschitz连续）的前提下，精确线搜索得到的$\alpha^*$至少不劣于固定步长$\alpha = 1/L$（固定步长仅能保证“函数值下降”，但无法保证下降幅度最优）。
+
+\subsection{黄金分割（Golden Section Search）}
+
+\textbf{适用场景}：当目标函数$\phi(\alpha)$是\textbf{单峰函数}（即区间内仅有一个最小值点），且计算梯度（或导数$\phi'(\alpha)$）代价高、难度大时，采用黄金分割法通过“区间收缩”逼近最优步长$\alpha^*$。
+
+\textbf{核心流程}：
+\begin{enumerate}
+    \item \textbf{初始区间设定}：确定初始搜索区间$[a, b]$，满足$\phi(0) < \phi(b)$（保证最小值点在区间内，因$\alpha=0$对应当前点，函数值最大），初始令$a=0$；
+    \item \textbf{区间收缩规则}：
+    \begin{itemize}
+        \item 在区间$[a, b]$内选取两个对称点$t_1$和$t_2$（$a < t_1 < t_2 < b$），两点间距与区间总长的比例为“黄金分割系数”$c = \frac{1}{2}(\sqrt{5} - 1) \approx 0.618$，即：
+        \begin{equation}
+        t_1 = a + (1 - c)(b - a), \quad t_2 = a + c(b - a)
+        \end{equation}
+        \item 比较函数值：
+        \begin{itemize}
+            \item 若$\phi(t_2) > \phi(t_1)$：说明最小值点$\alpha^* \in [a, t_2]$，令新区间为$[a, t_2]$；
+            \item 若$\phi(t_1) > \phi(t_2)$：说明最小值点$\alpha^* \in [t_1, b]$，令新区间为$[t_1, b]$；
+        \end{itemize}
+    \end{itemize}
+    \item \textbf{迭代收敛}：重复步骤2，不断收缩区间，直到区间长度小于预设精度。最终区间内的任意点均可作为$\alpha^*$的近似值，收敛误差上界与$0.618^k$成正比（$k$为迭代次数）。
+\end{enumerate}
+
+\textbf{特点}：优点是无需计算梯度/导数，仅通过函数值比较即可迭代；缺点是收敛速度较慢（线性收敛），仅适用于单峰函数。
+
+\subsection{回溯搜索（Backtracking Line Search）与 Armijo–Wolfe 准则}
+
+回溯搜索通过“先试后调”的方式确定步长，需满足两个核心条件（保证步长既“足够大”以加速收敛，又“足够小”以保证函数值下降）：
+
+\begin{definition}[Armijo 条件（充分下降条件）]
+确保步长能使函数值显著下降，数学表达为：
+\begin{equation}
+f(x + \alpha p) \leq f(x) + c_1 \alpha \nabla f(x)^\top p
+\end{equation}
+其中$0 < c_1 < 1$（通常取$c_1 = 10^{-4}$），$\nabla f(x)^\top p < 0$（因$p$为下降方向），右边项为函数值的“预期下降下限”。
+\end{definition}
+
+\begin{definition}[Wolfe 条件（曲率条件）]
+确保步长不会过小（避免收敛过慢），数学表达为：
+\begin{equation}
+\nabla f(x + \alpha p)^\top p \geq c_2 \nabla f(x)^\top p
+\end{equation}
+其中$c_1 < c_2 < 1$（通常取$c_2 = 0.9$），该条件要求“更新后的梯度与搜索方向的内积”不小于“初始梯度与搜索方向内积”的$c_2$倍，避免步长停留在“函数值下降缓慢的区域”。
+\end{definition}
+
+\textbf{回溯搜索算法流程}：
+给定后退因子$\beta \in (0, 1)$（通常取$\beta = 0.5$或$0.8$），步骤如下：
+\begin{enumerate}
+    \item \textbf{初始步长尝试}：令初始步长$\alpha \leftarrow 1$（默认从“单位步长”开始，适配 Newton 法等需要大步长的场景）；
+    \item \textbf{条件判断与步长调整}：若当前$\alpha$不满足 Armijo 条件（ Armijo–Wolfe 联合条件），则按比例缩小步长：$\alpha \leftarrow \beta \alpha$；
+    \item \textbf{终止}：重复步骤2，直到$\alpha$满足预设条件，输出最终步长$\alpha$。
+\end{enumerate}
+
+\textbf{关键性质与应用}：
+\begin{itemize}
+    \item \textbf{终止性}：由 Descent Lemma 可证明：当$\alpha$足够小时，Armijo 条件必成立，因此回溯搜索一定能终止；
+    \item \textbf{与 Newton 法的结合（两阶段收敛）}：
+    \begin{itemize}
+        \item 阶段 I（远离最优解时）：$\alpha < 1$，通过回溯调整步长进入“可接受域”（满足 Armijo–Wolfe 条件）；
+        \item 阶段 II（靠近最优解时）：步长会触发$\alpha = 1$（单位步长），此时 Newton 法可实现二次收敛（收敛速度远快于梯度下降）。
+    \end{itemize}
+\end{itemize}
+
+\section{收敛率：强凸 / PL 条件与“楼梯现象”}
+
+\subsection{强凸 + L-光滑：线性收敛}
+
+\begin{definition}[强凸与L-光滑]
+目标函数$f(x)$需同时满足两大性质：
+\begin{enumerate}
+    \item \textbf{强凸性}：存在常数$\mu > 0$，对任意迭代点$x$，其Hessian矩阵（二阶导数矩阵）满足下界约束：
+    \begin{equation}
+    \mu I \preceq \nabla^2 f(x)
+    \end{equation}
+    （“强凸”保证函数有唯一最小值点，且函数形态“下凸程度”可控）；
+    \item \textbf{L-光滑性}：存在常数$L > 0$，对任意迭代点$x$，其Hessian矩阵满足上界约束：
+    \begin{equation}
+    \nabla^2 f(x) \preceq L I
+    \end{equation}
+    （“L-光滑”保证函数曲率不超过阈值，梯度变化平缓，避免局部剧烈波动）。
+\end{enumerate}
+\end{definition}
+
+\begin{theorem}[线性收敛性]
+当步长取$\alpha = 1/L$时，梯度下降迭代满足严格的线性收敛性质：
+\begin{enumerate}
+    \item 函数值下降界（每次迭代函数值必递减且幅度可控）：
+    \begin{equation}
+    f(x_{k+1}) \leq f(x_k) - \frac{1}{2L} \|\nabla f(x_k)\|_2^2
+    \end{equation}
+    \item 迭代点误差界（$x^*$为函数最优解，与最优解的距离按固定比例缩小）：
+    \begin{equation}
+    \|x_{k+1} - x^*\|_2^2 \leq \left(1 - \frac{\mu}{L}\right) \|x_k - x^*\|_2^2
+    \end{equation}
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}[证明：线性收敛性]
+\textbf{一、明确核心前提与已有结论}
+
+在证明前，需明确2个关键性质（强凸+L-光滑）的推论，及1个已证结论：
+
+1. \textbf{强凸性的核心推论}：
+若函数$f$强凸（存在$\mu>0$，使$\mu I \preceq \nabla^2 f(x)$），则对任意迭代点$x$与最优解$x^*$（满足$\nabla f(x^*)=0$），有：
+\begin{equation}
+f(x) - f(x^*) \geq \frac{\mu}{2}\|x - x^*\|_2^2 \tag{1}
+\end{equation}
+（强凸性保证“函数值与最优值的差距”不小于“迭代点与最优解距离平方”的固定倍数，建立误差与函数值差的关联）
+
+同时，强凸性还可推出“梯度范数与函数值差的关系”：
+因为$\nabla f(x^*)=0$，
+\begin{equation}
+f(x^*)\ge f(x)+\nabla f(x)^{\top}(x^*-x)+\frac{\mu}{2}|x^*-x|^2.
+\end{equation}
+移项：
+\begin{equation}
+f(x)-f(x^*)\le\nabla f(x)^{\top}(x-x^*)-\frac{\mu}{2}|x-x^*|^2. \tag{B}
+\end{equation}
+由 Cauchy–Schwarz：
+\begin{equation}
+\nabla f(x)^{\top}(x-x^*) \le |\nabla f(x)|\cdot|x-x^*|.
+\end{equation}
+令右侧关于$|x-x^*|$的表达最小化，可视为二次函数
+\begin{equation}
+|\nabla f(x)|\cdot|x-x^*|-\frac{\mu}{2}|x-x^*|^2.
+\end{equation}
+其最大值出现在$|x-x^*|=\frac{|\nabla f(x)|}{\mu}$，代入得
+\begin{equation}
+f(x)-f(x^*)\le \frac{1}{2\mu}|\nabla f(x)|^2.
+\end{equation}
+即：
+\begin{equation}
+\|\nabla f(x)\|_2^2 \geq 2\mu(f(x) - f(x^*)) \tag{2}
+\end{equation}
+（梯度大小能反映函数值与最优值的差距，为后续替换梯度项做准备）
+
+2. \textbf{已证的函数值下降界}：
+由L-光滑性（梯度L-Lipschitz连续）及步长$\alpha=1/L$，已证明函数值满足：
+\begin{equation}
+f(x_{k+1}) \leq f(x_k) - \frac{1}{2L}\|\nabla f(x_k)\|_2^2 \tag{3}
+\end{equation}
+
+\textbf{二、步骤1：推导函数值差的线性衰减关系}
+
+将式(3)变形为“相邻迭代的函数值差下界”：
+\begin{equation}
+f(x_k) - f(x_{k+1}) \geq \frac{1}{2L}\|\nabla f(x_k)\|_2^2
+\end{equation}
+将强凸性推论式(2)（$\|\nabla f(x_k)\|_2^2 \geq 2\mu(f(x_k) - f(x^*))$）代入上式，替换梯度范数项：
+\begin{equation}
+f(x_k) - f(x_{k+1}) \geq \frac{1}{2L} \cdot 2\mu(f(x_k) - f(x^*))
+\end{equation}
+化简后得到“函数值差的衰减关系”：
+\begin{equation}
+f(x_k) - f(x_{k+1}) \geq \frac{\mu}{L}(f(x_k) - f(x^*))
+\end{equation}
+进一步整理，将函数值差聚焦到“与最优值的差距”：
+\begin{equation}
+f(x_{k+1}) - f(x^*) \leq f(x_k) - f(x^*) - \frac{\mu}{L}(f(x_k) - f(x^*))
+\end{equation}
+\begin{equation}
+f(x_{k+1}) - f(x^*) \leq \left(1 - \frac{\mu}{L}\right)\left(f(x_k) - f(x^*)\right) \tag{4}
+\end{equation}
+式(4)表明：迭代中“函数值与最优值的差距”按$(1 - \mu/L)$的比例线性衰减。
+
+\textbf{三、步骤2：将函数值差衰减转化为迭代误差衰减}
+
+利用强凸性推论式(1)，分别对$x_{k+1}$和$x_k$建立“迭代误差与函数值差的关联”：
+
+- 对$x_{k+1}$：
+\begin{equation}
+\|x_{k+1} - x^*\|_2^2 \leq \frac{2}{\mu}\left(f(x_{k+1}) - f(x^*)\right) \tag{5}
+\end{equation}
+（由式(1)变形：两边同乘$2/\mu$，不等号方向不变）
+
+- 对$x_k$：
+\begin{equation}
+f(x_k) - f(x^*) \geq \frac{\mu}{2}\|x_k - x^*\|_2^2 \implies \frac{2}{\mu}\left(f(x_k) - f(x^*)\right) \geq \|x_k - x^*\|_2^2 \tag{6}
+\end{equation}
+
+\textbf{四、步骤3：合并推导得到迭代误差界}
+
+将式(4)（函数值差衰减）代入式(5)，再结合式(6)（函数值差与$x_k$误差的关联）：
+\begin{equation}
+\|x_{k+1} - x^*\|_2^2 \leq \frac{2}{\mu} \cdot \left(1 - \frac{\mu}{L}\right)\left(f(x_k) - f(x^*)\right)
+\end{equation}
+由式(6)可知$\frac{2}{\mu}\left(f(x_k) - f(x^*)\right) \geq \|x_k - x^*\|_2^2$，因此：
+\begin{equation}
+\|x_{k+1} - x^*\|_2^2 \leq \left(1 - \frac{\mu}{L}\right) \cdot \frac{2}{\mu}\left(f(x_k) - f(x^*)\right) \leq \left(1 - \frac{\mu}{L}\right)\|x_k - x^*\|_2^2
+\end{equation}
+
+\textbf{五、结论}
+
+最终证得迭代误差界公式：
+\begin{equation}
+\| x_{k+1}-x^{*}\| _{2}^{2} \leq\left(1-\frac{\mu}{L}\right)\left\| x_{k}-x^{*}\right\| _{2}^{2}
+\end{equation}
+该公式表明：强凸+L-光滑条件下，梯度下降的迭代误差按$(1 - \mu/L)$的线性因子衰减，收敛速度由条件数$\kappa=L/\mu$决定——$\kappa$越大，$(1 - 1/\kappa)$越接近1，误差衰减越慢，且易因等高线“细长”出现“楼梯形”迂回路径。
+\end{proof}
+
+\begin{definition}[条件数]
+定义条件数$\kappa = L/\mu$（L与μ的比值），线性收敛的“衰减速度”由$\kappa$决定：
+\begin{itemize}
+    \item $\kappa$越小（L与μ接近）：衰减因子$(1 - 1/\kappa)$越接近0，收敛越快；
+    \item $\kappa$越大（L远大于μ）：衰减因子越接近1，收敛越慢，且极易出现“楼梯现象”。
+\end{itemize}
+\end{definition}
+
+\subsection{PL（Polyak–Lojasiewicz）不等式}
+
+\begin{definition}[PL条件]
+若存在常数$\mu > 0$，对任意迭代点$x$，函数值差与梯度范数满足以下关系：
+\begin{equation}
+f(x) - f(x^*) \leq \frac{1}{2\mu} \|\nabla f(x)\|_2^2
+\end{equation}
+（$f(x^*)$为函数最小值，PL条件是强凸性的“弱化版本”——无需函数严格强凸，仅通过“函数值差距”与“梯度大小”的关联约束函数形态）。
+\end{definition}
+
+\begin{theorem}[PL条件下的收敛性]
+即使$f(x)$非强凸，只要满足PL条件，梯度下降仍能实现\textbf{线性型收敛}，函数值差的衰减公式为：
+\begin{equation}
+f(x_k) - f(x^*) \leq \left(1 - \frac{\mu}{L}\right)^k \left[f(x_0) - f(x^*)\right]
+\end{equation}
+（$x_0$为初始迭代点，$k$为迭代次数）。
+\end{theorem}
+
+\textbf{实际意义}：解释了深度学习训练中的常见现象——深度网络的损失函数通常非强凸，但可能满足PL条件，因此训练时损失曲线会呈现“近似线性下降”的稳定趋势。
+
+\subsection{“楼梯现象”：成因与缓解}
+\begin{itemize}
+    \item \textbf{现象描述}：当函数条件数$\kappa = L/\mu$过大时，负梯度下降的迭代路径会呈现“楼梯形”：沿细长的等高线（如二次函数的椭圆等高线）迂回前进，每次仅沿等高线短轴方向小幅下降，无法直接逼近最小值点，迭代效率极低。
+    \item \textbf{核心成因}：条件数$\kappa$过大导致函数等高线“细长扁平”，负梯度方向（沿等高线法向）与“最优下降方向”（沿等高线长轴方向）偏差极大，梯度下降陷入“来回震荡、缓慢逼近”的困境。
+    \item \textbf{缓解方法}：\textbf{预条件化}（或输入/参数归一化）——通过线性变换（如文档中二次函数的坐标变换$y = A^{1/2}x$）将“细长谷”地形转化为“圆形洼地”，本质是减小条件数$\kappa$，使负梯度方向更接近最优下降方向，从而消除楼梯现象。
+\end{itemize}
+
+\subsection{实践提示}
+\begin{enumerate}
+    \item \textbf{预条件化的核心价值}：通过调整优化空间的度量规则（如引入预条件矩阵），显著降低条件数$\kappa$，从根本上改善收敛速度；
+    \item \textbf{迭代停止准则}：无需迭代至完全收敛，满足以下任一条件即可终止：
+    \begin{itemize}
+        \item 梯度范数足够小（函数接近平稳）：$\|\nabla f(x_k)\|_2 \leq \varepsilon$（$\varepsilon$为预设精度，如$10^{-6}$）；
+        \item 函数值相对下降不足（继续迭代收益极低）：$\frac{f(x_{k-1}) - f(x_k)}{\max(1, f(x_{k-1}))} \leq \varepsilon$。
+    \end{itemize}
+\end{enumerate}
+
+\section{Newton法：局部二次近似与两阶段收敛}
+Newton法是比梯度下降更高效的优化方法，核心是通过\textbf{函数的局部二次近似}确定搜索方向，兼具“局部快速收敛”与“全局有效下降”的特性，其核心逻辑围绕“二阶展开→牛顿步→收敛性”展开。
+
+\subsection{核心思路：函数的局部二次近似}
+梯度下降仅用“一阶信息（梯度）”将函数局部近似为线性函数，而Newton法引入“二阶信息（Hessian矩阵）”，将函数局部近似为\textbf{二次函数}（更贴合非凸函数的局部曲率）。
+
+\begin{definition}[局部二次近似]
+对迭代点$x$，将目标函数$f(x+\Delta)$在$x$处做二阶泰勒展开（$\Delta$为搜索方向向量）：
+\begin{equation}
+f(x+\Delta) \approx f(x) + \nabla f(x)^\top \Delta + \frac{1}{2}\Delta^\top H(x) \Delta
+\end{equation}
+其中：
+\begin{itemize}
+    \item $\nabla f(x)$是$f(x)$的梯度（一阶导数）；
+    \item $H(x) = \nabla^2 f(x)$是$f(x)$的Hessian矩阵（二阶导数矩阵），反映函数在$x$处的局部曲率。
+\end{itemize}
+Newton法的核心是：\textbf{最小化上述二次近似函数}，直接求解使近似函数最小的搜索方向$\Delta$。
+\end{definition}
+
+\subsection{牛顿步（Newton Step）的推导}
+对二阶近似函数关于$\Delta$求导，并令导数为0（二次函数的极值点条件）：
+\begin{equation}
+\frac{\partial}{\partial \Delta}\left[ f(x) + \nabla f(x)^\top \Delta + \frac{1}{2}\Delta^\top H(x) \Delta \right] = \nabla f(x) + H(x) \Delta = 0
+\end{equation}
+
+\begin{definition}[牛顿步]
+若Hessian矩阵\textbf{正定}（$H(x) \succ 0$，保证二次近似函数是凸函数，极值点为最小值点），则可解出唯一的搜索方向——\textbf{牛顿步}：
+\begin{equation}
+\Delta_{nt} = -H(x)^{-1} \nabla f(x)
+\end{equation}
+\end{definition}
+
+\subsection{牛顿步的下降性}
+牛顿步能保证是“下降方向”的前提是$H(x) \succ 0$，证明如下：
+计算梯度与牛顿步的内积（判断方向是否下降的核心指标，内积<0则为下降方向）：
+\begin{equation}
+\nabla f(x)^\top \Delta_{nt} = \nabla f(x)^\top \left( -H(x)^{-1} \nabla f(x) \right)
+\end{equation}
+因$H(x) \succ 0$，其逆矩阵$H(x)^{-1}$也正定，故对任意非零向量$\nabla f(x)$，有$\nabla f(x)^\top H(x)^{-1} \nabla f(x) > 0$，因此：
+\begin{equation}
+\nabla f(x)^\top \Delta_{nt} < 0
+\end{equation}
+即牛顿步满足“下降方向”的核心条件。
+
+\subsection{局部二次收敛：牛顿法的核心优势}
+当迭代点足够靠近最优解$x^*$时，Newton法会呈现\textbf{二次收敛}（收敛速度远快于梯度下降的线性收敛）。
+
+\begin{theorem}[牛顿法局部二次收敛]
+若满足以下两个前提：
+\begin{enumerate}
+    \item Hessian矩阵$H(x)$在$x^*$的邻域内\textbf{Lipschitz连续}（曲率变化平缓）；
+    \item 初始迭代点$x^{(0)}$足够靠近$x^*$（进入“局部收敛域”）。
+\end{enumerate}
+此时存在常数$C > 0$，使得迭代误差满足：
+\begin{equation}
+\| x_{k+1} - x^* \| \leq C \cdot \| x_k - x^* \|^2
+\end{equation}
+\end{theorem}
+
+\begin{proof}[证明：局部二次收敛]
+\textbf{结论：}
+在$H$在某邻域内满足 Lipschitz（存在常数$M$使得$|H(x)-H(y)| \le M|x-y|$）且$H(x^*)$非奇异的情形，从足够近的初值出发，牛顿迭代局部二次收敛，即存在常数$C>0$和半径$r>0$，当$|x_k-x^*| \le r$时
+\begin{equation}
+|x_{k+1}-x^*| \le C|x_k-x^*|^2.
+\end{equation}
+
+\textbf{证明：}
+设误差$e_k := x_k - x^*$。由$\nabla f(x^*) = 0$和一维积分形式的泰勒公式：
+\begin{equation}
+\nabla f(x_k) = \int_0^1 H(x^* + t e_k) e_k \, dt.
+\end{equation}
+牛顿更新写作：
+\begin{equation}
+e_{k+1} = x_k - x^* - H(x_k)^{-1} \nabla f(x_k) = H(x_k)^{-1} \left( H(x_k) - \int_0^1 H(x^* + t e_k) dt \right) e_k.
+\end{equation}
+取范数并用三角不等式得：
+\begin{equation}
+|e_{k+1}| \le |H(x_k)^{-1}| \int_0^1 |H(x_k) - H(x^* + t e_k)| dt \cdot |e_k|.
+\end{equation}
+利用 Hessian 的 Lipschitz 性质（常数记为$M$）：
+\begin{equation}
+|H(x_k) - H(x^* + t e_k)| \le M |x_k - (x^* + t e_k)| = M(1 - t)|e_k|.
+\end{equation}
+代入并对$t$积分：
+\begin{equation}
+|e_{k+1}| \le |H(x_k)^{-1}| \cdot M \left( \int_0^1 (1 - t) dt \right) |e_k|^2 = \frac{M}{2} |H(x_k)^{-1}| |e_k|^2.
+\end{equation}
+由于$H$连续且$H(x^*)$非奇异，存在半径$r>0$，使得对所有$|x - x^*| \le r$，$H(x)$可逆，且$|H(x)^{-1}| \le B$（$B$为该闭球上逆的上界）。因此当$|e_k| \le r$时：
+\begin{equation}
+|e_{k+1}| \le \frac{M B}{2} |e_k|^2.
+\end{equation}
+令常数$C := \frac{M B}{2}$，即得局部二次收敛估计。
+\end{proof}
+
+\textbf{直观意义}：二次收敛意味着“每次迭代后，误差的有效位数会翻倍”——例如：若第$k$步误差为$10^{-2}$，第$k+1$步误差可降至$10^{-4}$，第$k+2$步可降至$10^{-8}$，接近最优解时收敛极快。

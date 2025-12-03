@@ -1,0 +1,122 @@
+\relax 
+\providecommand\zref@newlabel[2]{}
+\providecommand\hyper@newdestlabel[2]{}
+\@writefile{toc}{\contentsline {chapter}{\numberline {第十二章\hspace  {.3em}}约束优化问题解法}{116}{chapter.12}\protected@file@percent }
+\@writefile{lof}{\addvspace {10.0pt}}
+\@writefile{lot}{\addvspace {10.0pt}}
+\@writefile{toc}{\contentsline {section}{\numberline {12.1}外点法}{116}{section.12.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.1.1}核心定义与问题形式}{116}{subsection.12.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2. 外点法的核心思想}{116}{subsubsection*.178}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.1.2}数学建模：惩罚函数构造}{116}{subsection.12.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3. 约束违反度量函数的具体形式}{117}{subsubsection*.179}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{（1）不等式约束惩罚项 $\phi (g_i(\bm  {x}))$}{117}{paragraph*.180}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{（2）等式约束惩罚项 $\psi (h_j(\bm  {x}))$}{117}{paragraph*.181}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{4. 完整惩罚函数示例（二次惩罚）}{117}{subsubsection*.182}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.1.3}算法流程（严格形式化）}{117}{subsection.12.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.1.4}收敛性分析（核心结论）}{118}{subsection.12.1.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{关键直观解释}{119}{paragraph*.183}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.1.5}优缺点}{119}{subsection.12.1.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{优点}{119}{subsubsection*.184}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{缺点}{119}{subsubsection*.185}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{深入分析：$\mu _k$ 过大会让 Hessian 病态？}{119}{subsubsection*.186}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{深入分析：等式约束惩罚项的本质}{120}{subsubsection*.187}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{深入分析：$(g(x)^+)^2$ 只惩罚越界方向}{121}{subsubsection*.188}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{一维标量情形}{121}{paragraph*.189}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{导数分析（一阶性质）}{121}{paragraph*.190}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{推广到多维不等式约束分量 $g_j(x)$}{121}{paragraph*.191}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Hessian 矩阵分析（二阶性质）}{121}{paragraph*.192}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{总结}{122}{paragraph*.193}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.1.6}示例：外点法求解}{122}{subsection.12.1.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{一、问题定义}{122}{subsubsection*.194}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{二、外点法惩罚函数构造}{122}{subsubsection*.195}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{三、求解无约束子问题（对固定 $\mu _k$）}{122}{subsubsection*.196}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{情况 1：$x_1 \leq 0.6$（惩罚项中 $\max (0, x_1-0.6)=0$）}{122}{paragraph*.197}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{情况 2：$x_1 > 0.6$（惩罚项中 $\max (0, x_1-0.6)=x_1-0.6$）}{123}{paragraph*.198}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{四、令 $\mu _k \to +\infty $，求极限解}{123}{subsubsection*.199}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{五、验证最优解}{123}{subsubsection*.200}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.1.7}外点法的极限满足 KKT}{123}{subsection.12.1.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1. 核心定理/引理（基于外点法的推导）}{123}{subsubsection*.201}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2. 为什么能证明外点法极限满足 KKT？}{124}{subsubsection*.202}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3. 外点法极限满足的 KKT 条件描述}{124}{subsubsection*.203}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {12.2}增广拉格朗日（ALM）}{124}{section.12.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.1}从外点法到增广拉格朗日法（ALM）}{124}{subsection.12.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.2}拉格朗日函数的基础铺垫}{125}{subsection.12.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.3}增广拉格朗日函数的构造}{125}{subsection.12.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1. 标准增广拉格朗日函数}{125}{subsubsection*.204}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2. 简化形式与物理意义}{125}{subsubsection*.205}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.4}乘子更新规则的推导（基于 KKT 条件）}{125}{subsection.12.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1. 无约束子问题的最优性条件}{126}{subsubsection*.206}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2. 对不等式约束乘子 $\lambda _i$ 的更新}{126}{subsubsection*.207}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3. 对等式约束乘子 $\nu _j$ 的更新}{126}{subsubsection*.208}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.5}ALM 算法流程}{126}{subsection.12.2.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.6}ALM 与外点法的核心差异（严谨对比）}{127}{subsection.12.2.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.7}收敛性核心结论}{127}{subsection.12.2.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.2.8}示例：ALM 应用}{127}{subsection.12.2.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{第一轮迭代 ($k=1$)}{128}{subsubsection*.209}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{步骤 1：构造增广拉格朗日函数}{128}{paragraph*.210}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{步骤 2：求解无约束子问题}{128}{paragraph*.211}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{步骤 3：更新乘子}{128}{paragraph*.212}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{第二轮迭代 ($k=2$)}{128}{subsubsection*.213}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{步骤 1：更新惩罚参数 \& 构造增广拉格朗日函数}{128}{paragraph*.214}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{步骤 2：求解无约束子问题}{128}{paragraph*.215}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{步骤 3：更新乘子}{128}{paragraph*.216}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{迭代结果总结}{129}{subsubsection*.217}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {12.3}约束问题的解法之 ADMM}{129}{section.12.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.3.1}第一步：先锁定 ALM 的“可分问题特例”（ADMM 的适用场景）}{129}{subsection.12.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.3.2}第二步：写出这个特例的 ALM 增广拉格朗日函数}{129}{subsection.12.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.3.3}第三步：ALM 对这个问题的迭代步骤}{129}{subsection.12.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.3.4}第四步：关键改进——利用“目标可分”拆分最小化步骤}{129}{subsection.12.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{拆分 1：固定 $\bm  {z}^k$，先求 $\bm  {x}^{k+1}$（ADMM 的 $\bm  {x}$-步）}{130}{subsubsection*.218}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{拆分 2：固定 $\bm  {x}^{k+1}$，再求 $\bm  {z}^{k+1}$（ADMM 的 $\bm  {z}$-步）}{130}{subsubsection*.219}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.3.5}第五步：简化符号——引入 ADMM 的“对偶残差 $\bm  {u}$”}{130}{subsection.12.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.3.6}最终：从 ALM 拆分得到的 ADMM 迭代（一一对应）}{130}{subsection.12.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {12.3.7}示例（与前述问题关联的改写）}{130}{subsection.12.3.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{步骤 1：转化为 ADMM 标准形式}{130}{subsubsection*.220}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{步骤 2：ADMM 的增广拉格朗日函数}{131}{subsubsection*.221}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{步骤 3：ADMM 迭代流程（3 步循环）}{131}{subsubsection*.222}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{第 1 轮迭代 ($k=0 \to k=1$)}{131}{paragraph*.223}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{第 2 轮迭代 ($k=1 \to k=2$)}{131}{paragraph*.224}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{第 3 轮迭代 ($k=2 \to k=3$)}{132}{paragraph*.225}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{迭代趋势}{132}{subsubsection*.226}\protected@file@percent }
+\@setckpt{chapters/ch12_constrained_methods}{
+\setcounter{page}{133}
+\setcounter{equation}{0}
+\setcounter{enumi}{3}
+\setcounter{enumii}{7}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{0}
+\setcounter{chapter}{12}
+\setcounter{section}{3}
+\setcounter{subsection}{7}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+\setcounter{parentequation}{0}
+\setcounter{mdf@globalstyle@cnt}{0}
+\setcounter{mdfcountframes}{0}
+\setcounter{mdf@env@i}{0}
+\setcounter{mdf@env@ii}{0}
+\setcounter{mdf@zref@counter}{0}
+\setcounter{float@type}{4}
+\setcounter{LT@tables}{0}
+\setcounter{LT@chunks}{0}
+\setcounter{theoreminner}{2}
+\setcounter{lemmainner}{3}
+\setcounter{propositioninner}{0}
+\setcounter{corollaryinner}{0}
+\setcounter{definitioninner}{1}
+\setcounter{exampleinner}{0}
+\setcounter{remarkinner}{3}
+\setcounter{algorithminner}{2}
+\setcounter{AM@survey}{0}
+\setcounter{section@level}{0}
+\setcounter{Item}{249}
+\setcounter{Hfootnote}{0}
+\setcounter{Hy@AnnotLevel}{0}
+\setcounter{bookmark@seq@number}{252}
+}

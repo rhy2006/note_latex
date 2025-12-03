@@ -1,0 +1,523 @@
+\chapter{凸优化简介}
+
+% 将公式按小节编号，格式形如 1.1.1
+\numberwithin{equation}{subsection}
+
+\section{数学优化}
+数学优化问题可以写为如下形式：
+\begin{equation}
+\begin{aligned}
+\text{minimize} \quad & f_0(x) \\
+\text{subject to} \quad & f_i(x) \leq b_i,\quad i=1,2,\dots,m
+\end{aligned}
+\end{equation}
+
+向量$x = (x_1,x_2,\dots,x_n)$称为问题的\textbf{优化变量}，函数$f_0$为目标函数，函数$f_i$为约束函数，常数$b_i$为约束上限或者约束边界。
+
+最优解 $x^*$ 是满足所有约束条件并使目标函数达到最小值的变量取值，即：
+\begin{equation}
+x^* = \arg\min_{x \in \mathbb{R}^n} f_0(x) \quad \text{满足} \quad f_i(x) \leq b_i,\quad i=1,2,\dots,m
+\end{equation}
+
+更具体地说，最优解 $x^*$ 满足以下两个条件：
+
+\begin{enumerate}
+  \item \textbf{可行性（Feasibility）}：
+  \begin{equation}
+  f_i(x^*) \leq b_i,\quad \forall i=1,2,\dots,m
+  \end{equation}
+  即最优解必须满足所有的约束条件。
+  
+  \item \textbf{最优性（Optimality）}：
+  \begin{equation}
+  f_0(x^*) \leq f_0(x),\quad \forall x \in \mathbb{R}^n \text{ 且满足 } f_i(x) \leq b_i,\quad i=1,2,\dots,m
+  \end{equation}
+  即最优解在所有可行解中使目标函数达到最小值。
+\end{enumerate}
+
+如果存在多个满足上述条件的解，则它们都称为最优解，且此时目标函数的最优值是唯一的。
+
+\section{线性规划与非线性规划}
+线性规划的核心特征为：\textbf{目标函数和约束函数均为线性函数}。
+
+\begin{definition}[线性函数]
+线性函数的定义为：对于任意 $x, y \in \mathbb{R}^n$ 和 $\alpha, \beta \in \mathbb{R}$，均满足：
+\begin{equation}
+f_i(\alpha x + \beta y) = \alpha f_i(x) + \beta f_i(y)
+\end{equation}
+\end{definition}
+
+
+\section{凸优化}
+凸优化的核心特征为：\textbf{目标函数和约束函数均为凸函数}。
+
+\begin{definition}[凸函数]
+凸函数的定义为：对于任意 $x, y \in \mathbb{R}^n$ 和 $\alpha, \beta \in \mathbb{R}$，且满足 $\alpha + \beta = 1$、$\alpha \geq 0$、$\beta \geq 0$，均有：
+\begin{equation}
+f_i(\alpha x + \beta y) \leq \alpha f_i(x) + \beta f_i(y)
+\end{equation}
+\end{definition}
+
+\section{最小二乘和线性规划}
+广为人知而且应用广泛的两类凸优化问题：最小二乘和线性规划
+
+\subsection{线性规划（Linear Programming, LP）}
+线性规划是一类目标函数与约束函数均为线性的优化问题，是最经典的确定性优化模型之一。
+
+一个函数 $f_i: \mathbb{R}^n \to \mathbb{R}$ 为线性函数，当且仅当对任意 $x, y \in \mathbb{R}^n$ 和任意标量 $\alpha, \beta \in \mathbb{R}$，满足\textbf{线性性}（齐次性+叠加性）：
+\begin{equation}
+f_i(\alpha x + \beta y) = \alpha f_i(x) + \beta f_i(y)
+\end{equation}
+
+其具体形式可表示为 $f_i(x) = c_i^T x$，其中 $c_i \in \mathbb{R}^n$ 为常数向量，$x \in \mathbb{R}^n$ 为决策变量。
+
+\begin{definition}[线性规划]
+线性规划的目标是在 linear 约束下优化 linear 目标函数，标准形式（以最小化为例）为：
+\begin{align}
+\min_{x \in \mathbb{R}^n} &\quad f(x) = c^T x \nonumber\\
+\text{s.t.} &\quad A x = b \\
+&\quad x \geq 0 \nonumber
+\end{align}
+\end{definition}
+其中：
+\begin{itemize}
+  \item $c \in \mathbb{R}^n$：目标函数系数向量；
+  \item $A \in \mathbb{R}^{m \times n}$：约束系数矩阵（$m < n$）；
+  \item $b \in \mathbb{R}^m$：约束右端项向量；
+  \item $x \geq 0$：决策变量非负约束。
+\end{itemize}
+
+
+\subsection{最小二乘法（Least Squares Method, LSM）}
+
+对于给定的观测数据 $\{(x_1, y_1), (x_2, y_2), \dots, (x_m, y_m)\}$，假设数据满足某种函数关系 $y = f(x; \theta)$（$\theta$ 为待估参数），最小二乘法的目标是寻找参数 $\theta^*$，使得\textbf{误差平方和最小}：
+\begin{equation}
+\theta^* = \arg\min_{\theta} \sum_{i=1}^m [y_i - f(x_i; \theta)]^2
+\end{equation}
+
+
+当待估参数 $\theta$ 与函数 $f(x; \theta)$ 呈线性关系时，称为线性最小二乘。其典型形式为：
+已知线性模型 $y = A \theta + \epsilon$（$\epsilon$ 为误差项），目标函数为：
+\begin{equation}
+\min_{\theta \in \mathbb{R}^n} \quad f(\theta) = \|A \theta - y\|_2^2 = (A \theta - y)^T (A \theta - y)
+\end{equation}
+
+其中：
+\begin{itemize}
+  \item $A \in \mathbb{R}^{m \times n}$：设计矩阵（$m > n$，保证超定系统）；
+  \item $y \in \mathbb{R}^m$：观测值向量；
+  \item $\theta \in \mathbb{R}^n$：待估参数向量。
+\end{itemize}
+
+该目标函数是关于 $\theta$ 的二次凸函数，无约束条件（或仅含线性约束）。
+
+当然最小二乘还有一些拓展，如加权最小二乘和正则化最小二乘，在此不展开。
+
+
+\section{仿射集合（Affine Sets）}
+仿射集合是线性空间中“平移后的线性子空间”，其核心特征是对\textbf{仿射组合}的封闭性。
+
+
+\subsection{仿射组合与仿射集合}
+\subsubsection{（1）仿射组合（Affine Combination）}
+\begin{definition}
+设 $x_1, x_2, \dots, x_k \in \mathbb{R}^n$，若标量 $\theta_1, \theta_2, \dots, \theta_k \in \mathbb{R}$ 满足 $\sum_{i=1}^k \theta_i = 1$，则称向量：
+\begin{equation}
+\theta_1 x_1 + \theta_2 x_2 + \dots + \theta_k x_k
+\end{equation}
+为 $x_1, x_2, \dots, x_k$ 的\textbf{仿射组合}。
+\end{definition}
+
+特别地，当 $k=2$ 时，仿射组合为 $\theta x + (1-\theta) y$（$\theta \in \mathbb{R}$），其几何意义是过点 $x$ 和 $y$ 的\textbf{整条直线}（区别于后续凸组合对应的“线段”）。
+
+
+\subsubsection{（2）仿射集合的定义}
+\begin{definition}
+一个集合 $A \subseteq \mathbb{R}^n$ 被称为\textbf{仿射集合}，当且仅当对任意 $x, y \in A$ 及任意 $\theta \in \mathbb{R}$，$x$ 与 $y$ 的仿射组合仍属于 $A$，即：
+\begin{equation}
+\theta x + (1-\theta) y \in A
+\end{equation}
+\end{definition}
+
+推广到 $k$ 个点：若 $A$ 是仿射集合，则对任意 $x_1, \dots, x_k \in A$ 及任意满足 $\sum_{i=1}^k \theta_i = 1$ 的 $\theta_1, \dots, \theta_k \in \mathbb{R}$，有 $\sum_{i=1}^k \theta_i x_i \in A$（可通过数学归纳法证明）。
+
+
+\subsection{仿射集合与线性子空间的关系}
+仿射集合可通过“线性子空间的平移”来等价描述，这是理解仿射集合的关键视角。
+
+\subsubsection{（1）平移与线性子空间}
+设 $A \subseteq \mathbb{R}^n$ 是仿射集合，任取 $x_0 \in A$，定义集合：
+\begin{equation}
+L = A - x_0 = \{ x - x_0 \mid x \in A \}
+\end{equation}
+则 $L$ 是 $\mathbb{R}^n$ 的\textbf{线性子空间}（满足对线性组合封闭：$\forall u, v \in L, \alpha, \beta \in \mathbb{R}$，$\alpha u + \beta v \in L$）。
+证明略
+
+
+\subsection{仿射包（Affine Hull）}
+\begin{definition}
+对任意集合 $S \subseteq \mathbb{R}^n$，包含 $S$ 的\textbf{最小仿射集合}称为 $S$ 的仿射包，记为 $\text{aff}(S)$。其数学表达式为：
+\begin{equation}
+	\text{aff}(S) = \left\{ \sum_{i=1}^k \theta_i x_i \mid x_1, \dots, x_k \in S, \theta_1, \dots, \theta_k \in \mathbb{R}, \sum_{i=1}^k \theta_i = 1 \right\}
+\end{equation}
+\end{definition}
+
+直观理解：仿射包是“由 $S$ 中所有点的仿射组合构成的集合”，例如 $\mathbb{R}^2$ 中两个点的仿射包是过这两点的直线，三个不共线点的仿射包是整个 $\mathbb{R}^2$。
+
+
+\subsection{典型实例}
+
+\begin{itemize}
+  \item 线性方程组的解空间：设 $A \in \mathbb{R}^{m \times n}$，$b \in \mathbb{R}^m$，则 $A x = b$ 的解集合 $X = \{ x \in \mathbb{R}^n \mid A x = b \}$ 是仿射集合（若 $X$ 非空）。
+  
+  \begin{proof}
+  任取 $x, y \in X$，则 $A(\theta x + (1-\theta) y) = \theta A x + (1-\theta) A y = \theta b + (1-\theta) b = b$，故 $\theta x + (1-\theta) y \in X$。
+  \end{proof}
+  
+  \item 单点集 $\{x_0\}$：是仿射集合（仅含自身，仿射组合仍为自身）。
+  
+  \item 整个空间 $\mathbb{R}^n$：是仿射集合（线性子空间本身，平移量为0）。
+\end{itemize}
+
+
+\section{凸集（Convex Sets）}
+凸集是凸优化的核心结构，其特征是对\textbf{凸组合}的封闭性，这直接保证了“局部最优即全局最优”的关键性质。
+
+
+\subsection{凸组合与凸集}
+\subsubsection{（1）凸组合（Convex Combination）}
+\begin{definition}
+设 $x_1, x_2, \dots, x_k \in \mathbb{R}^n$，若标量 $\theta_1, \theta_2, \dots, \theta_k \in \mathbb{R}$ 满足 $\sum_{i=1}^k \theta_i = 1$ 且 $\theta_i \geq 0$（$i=1, \dots, k$），则称向量：
+\begin{equation}
+\theta_1 x_1 + \theta_2 x_2 + \dots + \theta_k x_k
+\end{equation}
+为 $x_1, x_2, \dots, x_k$ 的\textbf{凸组合}。
+\end{definition}
+
+特别地，当 $k=2$ 时，凸组合为 $\theta x + (1-\theta) y$（$\theta \in [0,1]$），其几何意义是连接 $x$ 和 $y$ 的\textbf{线段}（区别于仿射组合的“直线”）。
+
+
+\subsubsection{（2）凸集的定义}
+\begin{definition}
+一个集合 $C \subseteq \mathbb{R}^n$ 被称为\textbf{凸集}，当且仅当对任意 $x, y \in C$ 及任意 $\theta \in [0,1]$，$x$ 与 $y$ 的凸组合仍属于 $C$，即：
+\begin{equation}
+\theta x + (1-\theta) y \in C
+\end{equation}
+\end{definition}
+
+推广到 $k$ 个点：若 $C$ 是凸集，则对任意 $x_1, \dots, x_k \in C$ 及任意满足 $\sum_{i=1}^k \theta_i = 1$ 且 $\theta_i \geq 0$ 的 $\theta_1, \dots, \theta_k \in \mathbb{R}$，有 $\sum_{i=1}^k \theta_i x_i \in C$（数学归纳法可证）。
+
+
+\subsection{与仿射集合的关系}
+仿射集合是特殊的凸集，但凸集不一定是仿射集合，二者的核心差异在于\textbf{组合系数的约束范围}：
+
+\begin{itemize}
+  \item 仿射组合：系数仅要求和为1（可正可负、可大于1）；
+  \item 凸组合：系数要求和为1且非负（仅在 $[0,1]$ 内取值）。
+\end{itemize}
+
+因此，仿射集合对更宽松的组合封闭，自然也对凸组合封闭，即：\textbf{若 $A$ 是仿射集合，则 $A$ 必是凸集}。反之，凸集（如线段、球体）不一定是仿射集合（线段对 $\theta > 1$ 的仿射组合不封闭）。
+
+
+\subsection{重要概念：凸包（Convex Hull）}
+\begin{definition}
+对任意集合 $S \subseteq \mathbb{R}^n$，包含 $S$ 的\textbf{最小凸集}称为 $S$ 的凸包，记为 $\text{conv}(S)$。其数学表达式为：
+\begin{equation}
+	\text{conv}(S) = \left\{ \sum_{i=1}^k \theta_i x_i \mid x_1, \dots, x_k \in S, \theta_i \geq 0, \sum_{i=1}^k \theta_i = 1 \right\}
+\end{equation}
+\end{definition}
+
+直观理解：凸包是“由 $S$ 中所有点的凸组合构成的集合”，例如 $\mathbb{R}^2$ 中三个不共线点的凸包是三角形，圆上所有点的凸包是闭圆盘。
+
+
+\subsection{典型实例}
+
+\begin{itemize}
+  \item 仿射集合的特例：线性子空间、线性方程组解空间、单点集、$\mathbb{R}^n$ 均为凸集；
+  
+  \item 标准凸集：
+  \begin{itemize}
+    \item 闭区间 $[a, b] \subseteq \mathbb{R}$；
+    \item 球体 $\{ x \in \mathbb{R}^n \mid \|x - x_0\| \leq r \}$（$\|\cdot\|$ 为任意范数）；
+    \item 正象限 $\mathbb{R}_+^n = \{ x \in \mathbb{R}^n \mid x_i \geq 0, i=1, \dots, n \}$；
+    \item 半空间 $\{ x \in \mathbb{R}^n \mid a^T x \leq b \}$（$a \neq 0$，本质是线性不等式约束的解空间）。
+  \end{itemize}
+\end{itemize}
+
+
+\section{锥（Cones）与凸锥（Convex Cones）}
+锥是一类对“正齐次性”封闭的集合，凸锥则进一步结合了凸性，是锥优化（如半定规划、二次锥规划）的核心结构。
+
+
+\subsection{核心定义：锥与凸锥}
+\subsubsection{（1）锥的定义}
+\begin{definition}
+一个非空集合 $K \subseteq \mathbb{R}^n$ 被称为\textbf{锥}，当且仅当对任意 $x \in K$ 及任意 $\alpha \geq 0$（非负标量），有 $\alpha x \in K$，即：
+\begin{equation}
+x \in K, \alpha \geq 0 \implies \alpha x \in K
+\end{equation}
+\end{definition}
+
+直观理解：锥是“从原点出发的射线族”，若某条射线包含于 $K$，则射线的所有非负伸缩段也包含于 $K$。
+
+
+\subsubsection{（2）凸锥的定义}
+\begin{definition}
+一个非空集合 $K \subseteq \mathbb{R}^n$ 被称为\textbf{凸锥}，当且仅当它既是锥，又是凸集。其等价刻画有两种：
+
+$K$ 是凸锥，当且仅当对任意 $x_1, \dots, x_k \in K$ 及任意 $\alpha_1, \dots, \alpha_k \geq 0$，有 $\sum_{i=1}^k \alpha_i x_i \in K$（称为对\textbf{非负线性组合}封闭）。
+\end{definition}
+
+
+\subsection{重要概念：凸锥包（Convex Cone Hull）}
+\begin{definition}
+对任意集合 $S \subseteq \mathbb{R}^n$，包含 $S$ 的\textbf{最小凸锥}称为 $S$ 的凸锥包，记为 $\text{cone}(S)$。其数学表达式为：
+\begin{equation}
+	\text{cone}(S) = \left\{ \sum_{i=1}^k \alpha_i x_i \mid x_1, \dots, x_k \in S, \alpha_i \geq 0 \right\}
+\end{equation}
+\end{definition}
+
+直观理解：凸锥包是“由 $S$ 中所有点的非负线性组合构成的集合”，例如 $\mathbb{R}^2$ 中两个不共线向量的凸锥包是它们张成的“角形区域”。
+
+
+\subsection{典型实例}
+
+\begin{itemize}
+  \item 非凸锥：$\mathbb{R}^2$ 中 $\{ (x_1, x_2) \mid x_1 x_2 \geq 0 \}$（第一、三象限的并集，对凸组合不封闭，如 $(1,0)$ 和 $(0,1)$ 的凸组合 $(1/2, 1/2)$ 不属于该集合）；
+  
+  \item 凸锥：
+  \begin{itemize}
+    \item 原点 $\{0\}$（平凡凸锥）；
+    \item 正象限 $\mathbb{R}_+^n = \{ x \mid x_i \geq 0 \}$（非负线性组合仍非负）；
+    \item 线性子空间 $L \subseteq \mathbb{R}^n$（对任意 $\alpha \in \mathbb{R}$ 封闭，自然对 $\alpha \geq 0$ 封闭，且是凸集）；
+    \item 二次锥（冰淇淋锥）：$Q = \{ (x, t) \in \mathbb{R}^n \times \mathbb{R} \mid \|x\| \leq t \}$（验证：若 $(x_1, t_1), (x_2, t_2) \in Q$，$\alpha_1, \alpha_2 \geq 0$，则 $\|\alpha_1 x_1 + \alpha_2 x_2\| \leq \alpha_1 \|x_1\| + \alpha_2 \|x_2\| \leq \alpha_1 t_1 + \alpha_2 t_2$，故 $\alpha_1(x_1, t_1) + \alpha_2(x_2, t_2) \in Q$）。
+  \end{itemize}
+\end{itemize}
+
+
+\section{三类集合的核心对比}
+为清晰梳理仿射集合、凸集与凸锥的差异与关联，下表从核心定义、组合类型、关键性质三个维度进行总结：
+
+\begin{table}[h]
+    \centering
+    % 改为4列，调整列宽适配内容
+    \begin{tabular}{p{2.5cm}p{3.5cm}p{3.5cm}p{4cm}}
+    \toprule
+    维度 & 仿射集合（Affine Set） & 凸集（Convex Set） & 凸锥（Convex Cone） \\
+    \midrule
+    核心定义 & 对仿射组合封闭 & 对凸组合封闭 & 对非负线性组合封闭 \\
+    典型组合形式 & $\theta x + (1-\theta) y$（$\theta \in \mathbb{R}$） & $\theta x + (1-\theta) y$（$\theta \in [0,1]$） & $\alpha x + \beta y$（$\alpha, \beta \geq 0$） \\
+    与线性子空间关系 & 平移后的线性子空间 & 包含线性子空间的子集（可非平移） & 线性子空间是特殊凸锥（对任意 $\alpha \in \mathbb{R}$ 封闭） \\
+    “最小包含集” & 仿射包（aff(S)） & 凸包（conv(S)） & 凸锥包（cone(S)） \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{重要的例子}
+\subsection{超平面（Hyperplane）与半空间（Halfspace）}
+超平面和半空间是由线性函数定义的基本集合，分别对应“线性等式约束”和“线性不等式约束”的解空间，是构建复杂凸集（如多面体）的基石。
+
+\subsubsection{（1）超平面（Hyperplane）}
+\paragraph{定义}
+\begin{definition}[超平面]
+设 $a \in \mathbb{R}^n$ 且 $a \neq 0$（非零法向量），$b \in \mathbb{R}$（常数），则 $\mathbb{R}^n$ 中的\textbf{超平面}定义为：
+\begin{equation}
+H = \{ x \in \mathbb{R}^n \mid a^T x = b \}
+\end{equation}
+\end{definition}
+
+\paragraph{几何意义}
+超平面是 $\mathbb{R}^n$ 中“维度为 $n-1$ 的仿射集合”，可理解为“与法向量 $a$ 垂直且到原点的‘距离’为 $|b|/\|a\|$ 的平面”。例如：
+
+\begin{itemize}
+  \item 当 $n=2$ 时，$H$ 是直线（$a_1 x_1 + a_2 x_2 = b$）；
+  \item 当 $n=3$ 时，$H$ 是平面（$a_1 x_1 + a_2 x_2 + a_3 x_3 = b$）。
+\end{itemize}
+
+\paragraph{性质：超平面是仿射集合}
+
+
+\subsubsection{（2）半空间（Halfspace）}
+\paragraph{定义}
+\begin{definition}[闭半空间]
+设 $a \in \mathbb{R}^n$ 且 $a \neq 0$，$b \in \mathbb{R}$，则 $\mathbb{R}^n$ 中的\textbf{闭半空间}（Closed Halfspace）定义为：
+\begin{equation}
+H_+ = \{ x \in \mathbb{R}^n \mid a^T x \geq b \}, \quad H_- = \{ x \in \mathbb{R}^n \mid a^T x \leq b \}
+\end{equation}
+若将不等式改为严格不等号（$>$ 或 $<$），则称为\textbf{开半空间}（Open Halfspace）。
+\end{definition}
+
+\paragraph{几何意义}
+半空间是超平面将 $\mathbb{R}^n$ 分割成的两个“半无限区域”，其中 $H_+$ 是法向量 $a$ 指向的一侧，$H_-$ 是相反侧。
+
+\paragraph{性质：半空间是凸集（非仿射集）}
+
+\subsubsection{（3）超平面与半空间的关系}
+超平面是两个闭半空间的交集：$H = H_+ \cap H_-$；反之，每个闭半空间都是超平面的“一侧区域”，二者共同构成线性约束的几何表达。
+
+
+\subsection{球（Ball）与椭球（Ellipsoid）}
+球和椭球是基于“距离”定义的凸集，广泛用于建模“变量取值范围的约束”（如稳健优化中的不确定性集合）。
+
+\subsubsection{（1）球（Euclidean Ball）}
+\paragraph{定义}
+\begin{definition}[欧氏球]
+设 $x_0 \in \mathbb{R}^n$（中心），$r > 0$（半径），基于\textbf{欧氏范数}（$\|x\|_2 = \sqrt{x_1^2 + \dots + x_n^2}$）的\textbf{闭球}定义为：
+\begin{equation}
+B(x_0, r) = \{ x \in \mathbb{R}^n \mid \|x - x_0\|_2 \leq r \}
+\end{equation}
+若将不等号改为 $<$，则称为\textbf{开球}。
+\end{definition}
+
+\paragraph{性质：球是凸集}
+
+\subsubsection{（2）椭球（Ellipsoid）}
+椭球是球的“仿射变换”，可描述更一般的“椭圆型区域”，在工程优化中常用于拟合数据分布或刻画变量波动范围。
+
+\paragraph{定义}
+\begin{definition}[椭球]
+设 $x_0 \in \mathbb{R}^n$（中心），$P \in \mathbb{S}_{++}^n$（正定对称矩阵，控制椭球的形状与方向），$r > 0$（缩放因子），则\textbf{椭球}定义为：
+\begin{equation}
+\mathcal{E} = \{ x \in \mathbb{R}^n \mid (x - x_0)^T P^{-1} (x - x_0) \leq r^2 \}
+\end{equation}
+
+等价表达：通过仿射变换 $x = x_0 + r P^{1/2} z$（其中 $P^{1/2}$ 是 $P$ 的正定平方根，$z \in \mathbb{R}^n$），椭球可表示为球的像：
+\begin{equation}
+\mathcal{E} = \{ x_0 + r P^{1/2} z \mid \|z\|_2 \leq 1 \}
+\end{equation}
+当 $P = I$（单位矩阵）时，椭球退化为球 $B(x_0, r)$。
+\end{definition}
+
+\paragraph{性质：椭球是凸集}
+
+
+\subsection{范数球（Norm Ball）与范数锥（Norm Cone）}
+范数球和范数锥是基于“一般范数”的扩展集合，将球的“距离约束”与锥的“正齐次性”结合，是范数优化、锥优化的核心结构。
+
+\subsubsection{（1）范数的回顾}
+首先明确\textbf{范数}的定义：
+\begin{definition}[范数]
+函数 $\|\cdot\|: \mathbb{R}^n \to \mathbb{R}$ 称为范数，若对任意 $x, y \in \mathbb{R}^n$ 和 $\alpha \in \mathbb{R}$，满足：
+
+\begin{enumerate}
+  \item 非负性：$\|x\| \geq 0$，且 $\|x\| = 0 \iff x = 0$；
+  \item 齐次性：$\|\alpha x\| = |\alpha| \|x\|$；
+  \item 三角不等式：$\|x + y\| \leq \|x\| + \|y\|$。
+\end{enumerate}
+
+\end{definition}
+常见范数包括欧氏范数（$\|\cdot\|_2$）、1-范数（$\|x\|_1 = \sum_{i=1}^n |x_i|$）、无穷范数（$\|x\|_\infty = \max_{i=1,\dots,n} |x_i|$）等。
+
+
+\subsubsection{（2）范数球（Norm Ball）}
+\paragraph{定义}
+\begin{definition}[范数球]
+设 $\|\cdot\|$ 是 $\mathbb{R}^n$ 上的范数，$x_0 \in \mathbb{R}^n$，$r > 0$，则\textbf{范数球}定义为：
+\begin{equation}
+B_{\|\cdot\|}(x_0, r) = \{ x \in \mathbb{R}^n \mid \|x - x_0\| \leq r \}
+\end{equation}
+
+当 $x_0 = 0$ 且 $r = 1$ 时，称为\textbf{单位范数球}（Unit Norm Ball）。
+\end{definition}
+\paragraph{性质：范数球是凸集}
+
+\paragraph{实例}
+
+\begin{itemize}
+  \item 1-范数球（$\|x\|_1 \leq 1$）：在 $\mathbb{R}^2$ 中是菱形，$\mathbb{R}^3$ 中是正八面体；
+  \item 无穷范数球（$\|x\|_\infty \leq 1$）：在 $\mathbb{R}^2$ 中是正方形，$\mathbb{R}^3$ 中是正方体。
+\end{itemize}
+
+
+\subsubsection{（3）范数锥（Norm Cone）}
+\paragraph{定义}
+\begin{definition}[范数锥]
+设 $\|\cdot\|$ 是 $\mathbb{R}^n$ 上的范数，定义\textbf{范数锥}（又称“冰淇淋锥”的推广）为：
+\begin{equation}
+K_{\|\cdot\|} = \{ (x, t) \in \mathbb{R}^n \times \mathbb{R} \mid \|x\| \leq t \}
+\end{equation}
+
+其中 $(x, t)$ 是 $\mathbb{R}^{n+1}$ 中的向量，$t$ 可理解为“范数的上界”。
+\end{definition}
+\paragraph{性质：范数锥是凸锥}
+
+
+\paragraph{实例}
+
+\begin{itemize}
+  \item 二次锥（Quadratic Cone）：当 $\|\cdot\| = \|\cdot\|_2$ 时，范数锥即为二次锥（又称Lorentz锥）：
+  \begin{equation}
+  Q = \{ (x, t) \in \mathbb{R}^n \times \mathbb{R} \mid \|x\|_2 \leq t \}
+  \end{equation}
+  是锥优化中最常用的凸锥之一。
+  
+  \item 1-范数锥：$K_{\|\cdot\|_1} = \{ (x, t) \mid \sum_{i=1}^n |x_i| \leq t \}$，在 $\mathbb{R}^2 \times \mathbb{R}$ 中呈“四棱锥”形状。
+\end{itemize}
+
+
+\subsection{多面体（Polyhedron）与单纯形（Simplex）}
+多面体是有限个线性等式与不等式约束的交集，是线性规划可行域的抽象；单纯形则是多面体的特殊情况，是“最低维度”的多面体，在数值优化中常用于构建搜索区域。
+
+\subsubsection{（1）多面体（Polyhedron）}
+\paragraph{定义}
+\begin{definition}{多面体}
+  多面体是有限个线性等式与不等式约束的交集，其数学表达式为： 
+\begin{equation}
+  \mathcal{P} = \{ x \in \mathbb{R}^n \mid A x \leq b, C x = d \}
+\end{equation}
+\end{definition}
+
+其中：
+
+\begin{itemize}
+  \item $A \in \mathbb{R}^{m \times n},\; b \in \mathbb{R}^m$：对应 $m$ 个半空间约束（$A x \leq b$ 即 $a_i^T x \leq b_i,\; i=1,\dots,m$）。
+  \item $C \in \mathbb{R}^{p \times n},\; d \in \mathbb{R}^p$：对应 $p$ 个超平面约束（$C x = d$ 即 $c_j^T x = d_j,\; j=1,\dots,p$）。
+\end{itemize}
+
+\paragraph{性质：多面体是凸集}
+
+\paragraph{实例}
+
+\begin{itemize}
+  \item 正象限 $\mathbb{R}_+^n = \{ x \mid x_i \geq 0, i=1,\dots,n \}$：是多面体（$A = -I$，$b = 0$）；
+  \item 线性规划的可行域：$X = \{ x \mid A x = b, x \geq 0 \}$，是多面体。
+\end{itemize}
+
+
+\subsubsection{（2）单纯形（Simplex）}
+单纯形是“由 $n+1$ 个仿射无关点生成的凸包”，是维度为 $n$ 的“最简单”多面体（顶点数量最少的多面体）。
+
+\begin{definition}{单纯形}
+\paragraph{定义1（基于仿射无关点）}
+设 $v_0, v_1, \dots, v_n \in \mathbb{R}^n$ 是\textbf{仿射无关}的点（即向量 $v_1 - v_0, \dots, v_n - v_0$ 线性无关），则由这些点生成的\textbf{单纯形}定义为：
+\begin{equation}
+\Delta = \text{conv}(v_0, v_1, \dots, v_n) = \left\{ \sum_{i=0}^n \theta_i v_i \mid \theta_i \geq 0, \sum_{i=0}^n \theta_i = 1 \right\}
+\end{equation}
+
+\paragraph{定义2（标准单纯形）}
+最常用的是\textbf{标准单纯形}（以单位向量为顶点），定义为：
+\begin{equation}
+\Delta_n = \{ x \in \mathbb{R}^n \mid x_1 + x_2 + \dots + x_n = 1, x_i \geq 0, i=1,\dots,n \}
+\end{equation}
+\end{definition}
+其顶点为 $e_1 = (1,0,\dots,0)^T, e_2 = (0,1,\dots,0)^T, \dots, e_n = (0,\dots,1)^T$（$n$ 个标准单位向量），但注意：此处 $n$ 维标准单纯形的顶点数量为 $n$，与定义1中“$n$ 维单纯形需 $n+1$ 个顶点”的差异源于“是否包含原点”——若定义为 $\Delta_n' = \{ (x, 1 - \sum x_i) \mid x \in \Delta_n \}$，则顶点为 $e_1,\dots,e_n, 0$，共 $n+1$ 个，符合定义1。
+
+\paragraph{关键性质}
+
+\begin{enumerate}
+  \item \textbf{维度}：由 $n+1$ 个仿射无关点生成的单纯形是 $n$ 维的（与空间维度一致）。
+  
+  \item \textbf{凸性}：单纯形是有限个点的凸包，而凸包是凸集（由凸包定义：所有凸组合的集合，自然对凸组合封闭），故单纯形是凸集。
+  
+  \item \textbf{多面体属性}：单纯形可表示为有限个线性等式与不等式的交集（如标准单纯形的约束 $x_1+\dots+x_n=1$ 和 $x_i\geq0$），因此是多面体。
+\end{enumerate}
+
+\paragraph{实例}
+
+\begin{itemize}
+  \item 1维单纯形：$\Delta_1 = \{ x \in \mathbb{R} \mid x = 1, x \geq 0 \}$ 即点 $\{1\}$；或扩展为 $\Delta_1' = \{ (x, 1-x) \mid x \geq 0 \}$ 即线段 $[0,1]$；
+  
+  \item 2维单纯形（标准）：$\Delta_2 = \{ (x_1, x_2) \mid x_1 + x_2 = 1, x_1, x_2 \geq 0 \}$ 即连接 $(1,0)$ 和 $(0,1)$ 的线段；或扩展为 $\Delta_2' = \{ (x_1, x_2, x_3) \mid x_1+x_2+x_3=1, x_i\geq0 \}$ 即三角形（3个顶点）；
+  
+  \item 3维单纯形：扩展形式为四面体（4个顶点）。
+\end{itemize}

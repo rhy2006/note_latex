@@ -1,0 +1,115 @@
+% 主文档：凸优化（中文教学用）—— 分章单文件结构，建议使用 XeLaTeX 编译
+\documentclass[zihao=5,a4paper,oneside]{ctexbook}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mdframed}
+\usepackage{booktabs}
+\usepackage{float}      % 强制图片/表格位置 [H]
+\usepackage{array}      % 扩展表格列格式
+\usepackage{multirow}   % 表格多行合并
+\usepackage{tabularx}   % 自动调整列宽
+\usepackage{longtable}  % 跨页长表格
+
+% 带框定理样式
+\mdfdefinestyle{theoremstyle}{
+  linecolor=blue!60!black,
+  linewidth=2pt,
+  frametitlerule=true,
+  frametitlebackgroundcolor=blue!10,
+  innertopmargin=\topskip,
+  roundcorner=5pt
+}
+
+% 定理环境
+\newtheorem{theoreminner}{定理}[chapter]
+\newenvironment{theorem}
+  {\begin{mdframed}[style=theoremstyle]\begin{theoreminner}}
+  {\end{theoreminner}\end{mdframed}}
+
+% 让更多“概念类”环境也使用带框样式（与定理一致）
+\newtheorem{lemmainner}{引理}[chapter]
+\newenvironment{lemma}
+  {\begin{mdframed}[style=theoremstyle]\begin{lemmainner}}
+  {\end{lemmainner}\end{mdframed}}
+
+\newtheorem{propositioninner}{命题}[chapter]
+\newenvironment{proposition}
+  {\begin{mdframed}[style=theoremstyle]\begin{propositioninner}}
+  {\end{propositioninner}\end{mdframed}}
+
+\newtheorem{corollaryinner}{推论}[chapter]
+\newenvironment{corollary}
+  {\begin{mdframed}[style=theoremstyle]\begin{corollaryinner}}
+  {\end{corollaryinner}\end{mdframed}}
+
+% 定义/例/注 也使用带框样式（概念类统一样式）
+\newtheorem{definitioninner}{定义}[chapter]
+\newenvironment{definition}
+  {\begin{mdframed}[style=theoremstyle]\begin{definitioninner}}
+  {\end{definitioninner}\end{mdframed}}
+
+\newtheorem{exampleinner}{例}[chapter]
+\newenvironment{example}
+  {\begin{mdframed}[style=theoremstyle]\begin{exampleinner}}
+  {\end{exampleinner}\end{mdframed}}
+
+\newtheorem{remarkinner}{注}[chapter]
+\newenvironment{remark}
+  {\begin{mdframed}[style=theoremstyle]\begin{remarkinner}}
+  {\end{remarkinner}\end{mdframed}}
+
+% 算法环境 (带框)
+\newtheorem{algorithminner}{算法}[chapter]
+\newenvironment{algorithm}
+  {\begin{mdframed}[style=theoremstyle]\begin{algorithminner}}
+  {\end{algorithminner}\end{mdframed}}
+
+% 重定义证明环境（使用小字号斜体）
+\renewenvironment{proof}[1][证明]
+  {\par\noindent{\small\textit{#1.}}\par\nopagebreak\small\itshape}
+  {\par\vspace{0.5em}}
+
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{pdfpages} % 引入 pdfpages 宏包
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\pagestyle{fancy}
+\fancyhf{}
+% 避免 fancyhdr 的 headheight 警告
+\setlength{\headheight}{13pt}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[RE]{\leftmark}
+\fancyhead[LO]{\rightmark}
+
+\title{凸优化笔记（复习用）}
+\author{作者：Harry}
+\date{\today}
+
+\begin{document}
+
+% 插入封面 pdf (确保 cover_page.pdf 在同级目录下)
+\includepdf{cover_page.pdf}
+
+\tableofcontents
+\cleardoublepage
+
+% 包含章节（每章单独文件），文件位于 note_latex/chapters/
+\include{chapters/ch01_introduction}
+\include{chapters/ch02_convex_properties}
+\include{chapters/ch03_unconstrained}
+\include{chapters/ch04_sgd}
+\include{chapters/ch05_momentum}
+\include{chapters/ch06_damped_newton}
+\include{chapters/ch07_newton_quasi}
+\include{chapters/ch08_evaluate_algorithms}
+\include{chapters/ch09_lagrange}
+\include{chapters/ch10_eq_to_ineq_kkt}
+\include{chapters/ch11_duality}
+\include{chapters/ch12_constrained_methods}
+
+\end{document}

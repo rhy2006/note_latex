@@ -1,0 +1,287 @@
+\chapter{从无约束到等式约束：拉格朗日乘子}
+
+\section{拉格朗日乘子数学建模}
+
+\subsection{1. 无约束优化的数学模型}
+无约束优化的基本模型为：
+\[
+\min_{x \in \mathbb{R}^n} f(x)
+\]
+其中$f: \mathbb{R}^n \to \mathbb{R}$是可微函数。其\textbf{一阶最优性条件}（极值点的必要条件）为：
+\[
+\nabla f(x^*) = 0
+\]
+即目标函数在最优解$x^*$处的梯度为零（可微函数的无约束极值点必是梯度为零的点）。
+
+\subsection{2. 等式约束优化的数学模型}
+当引入\textbf{等式约束}后，模型变为：
+\[
+\begin{cases} \min_{x \in \mathbb{R}^n} & f(x) \\ \text{s.t.} & h_i(x) = 0,\ i=1,\dots,m \end{cases}
+\]
+其中$h_i: \mathbb{R}^n \to \mathbb{R}$是可微的约束函数，$m$是约束个数（通常$m < n$）。
+
+此时，变量$x$被限制在由$m$个等式约束定义的\textbf{可行域}上，无法直接应用无约束的"梯度为零"条件——因为可行域是约束的"限制空间"，需考虑约束对优化的"限制作用"。
+
+\subsection{3. 拉格朗日函数的建模思想}
+为了将\textbf{等式约束"融入"目标函数}，我们引入\textbf{拉格朗日乘子}$\lambda = (\lambda_1, \dots, \lambda_m)^\top \in \mathbb{R}^m$，构造\textbf{拉格朗日函数}：
+\[
+\mathcal{L}(x, \lambda) = f(x) + \lambda^\top h(x)
+\]
+其中$h(x) = (h_1(x), \dots, h_m(x))^\top$是约束函数的向量形式，$\lambda^\top h(x) = \sum_{i=1}^m \lambda_i h_i(x)$是"约束项与乘子的耦合项"。
+
+\subsection{4. 拉格朗日函数的最优性条件（一阶KKT条件）}
+对拉格朗日函数$\mathcal{L}(x, \lambda)$分别关于$x$和$\lambda$求偏导，并令其为零，得到\textbf{一阶最优性条件}（等式约束下的KKT条件核心）：
+
+\begin{itemize}
+    \item \textbf{对$x$求梯度并令其为零}：
+    \[
+    \nabla_x \mathcal{L}(x^*, \lambda^*) = \nabla f(x^*) + \sum_{i=1}^p \lambda_i^* \nabla h_i(x^*) = 0
+    \]
+    即目标函数的梯度可表示为约束函数梯度的\textbf{线性组合}，组合系数就是拉格朗日乘子$\lambda_i^*$。这一条件体现了"目标函数与约束的梯度平衡"——在最优解处，目标函数的梯度被约束的梯度"抵消"，使得在可行域的切空间内无下降方向。
+
+    \item \textbf{对$\lambda$求梯度并令其为零}：
+    \[
+    \nabla_\lambda \mathcal{L}(x^*, \lambda^*) = h(x^*) = 0
+    \]
+    这就是原问题的\textbf{等式约束条件}，保证最优解满足约束。
+\end{itemize}
+
+\subsection{5. 几何意义（直观理解）}
+等式约束$h_i(x)=0$定义了一个\textbf{可行域（流形）}，其在最优解$x^*$处的\textbf{切空间}由"与所有$\nabla h_i(x^*)$正交的方向"构成。
+
+目标函数的梯度$\nabla f(x^*)$若要使$x^*$是极值点，必须"无法在切空间内找到下降方向"，即$\nabla f(x^*)$必须位于可行域的\textbf{法空间}中（法空间由$\nabla h_1(x^*), \dots, \nabla h_m(x^*)$张成）。因此，$\nabla f(x^*)$可表示为这些法向量的线性组合，这正是$\nabla_x \mathcal{L} = 0$所表达的"梯度线性组合"关系。
+
+综上，拉格朗日函数的建模是通过\textbf{引入乘子变量$\lambda$}，将\textbf{等式约束转化为无约束优化的梯度条件}，从而把"带约束的优化"转化为"对$(x, \lambda)$的无约束优化（在一阶条件意义下）"，实现了从无约束到等式约束优化的数学衔接。
+
+\section{拉格朗日乘子法的必要条件}
+
+\subsection{一阶必要条件及其证明}
+
+\begin{theorem}[一阶必要条件]
+设$x^*$是等式约束优化问题的局部极小点，且约束梯度$\nabla g_1(x^*), \dots, \nabla g_m(x^*)$线性无关（即\textbf{约束规格满足}）。则存在唯一的拉格朗日乘子$\lambda^* = (\lambda_1^*, \dots, \lambda_m^*)^T$使得：
+\[
+\begin{cases}
+\nabla_x \mathcal{L}(x^*, \lambda^*) = 0 \\
+\nabla_\lambda \mathcal{L}(x^*, \lambda^*) = 0
+\end{cases}
+\]
+\end{theorem}
+
+\subsubsection{证明}
+
+\begin{proof}
+考虑等式约束优化问题：
+\[
+\begin{cases} \min_{x \in \mathbb{R}^n} & f(x) \\ \text{s.t.} & h_i(x) = 0,\ i=1,\dots,m \end{cases}
+\]
+其中$f, h_i$连续可微，$x^*$是局部极小点，且\textbf{约束梯度线性无关}（即约束规格满足）：$\nabla h_1(x^*), \dots, \nabla h_m(x^*)$线性无关。
+
+记约束函数的向量形式为$h(x) = (h_1(x), \dots, h_m(x))^\top$，其雅可比矩阵为$J_h(x) \in \mathbb{R}^{m \times n}$，第$i$行为$\nabla h_i(x)^\top$。由约束梯度线性无关，$J_h(x^*)$的\textbf{秩为$m$}（列满秩）。
+
+将变量$x$分块为$x = (y, z)$，其中$y \in \mathbb{R}^m$，$z \in \mathbb{R}^{n-m}$（通过变量重排，可假设$J_h(x^*)$的前$m$列构成的子矩阵$\nabla_y h(x^*)$是\textbf{可逆的$m \times m$矩阵}）。
+
+根据\textbf{隐函数定理}，存在$x^*$的邻域和可微函数$g: \mathbb{R}^{n-m} \to \mathbb{R}^m$，使得在该邻域内，约束$h(y, z) = 0$可唯一表示为$y = g(z)$，且$g(z^*) = y^*$（即$x^* = (y^*, z^*)$）。
+
+原约束问题可转化为关于$z$的\textbf{无约束优化问题}：
+\[
+\min_{z \in \mathbb{R}^{n-m}} \ f(g(z), z)
+\]
+
+由于$x^*$是原问题的局部极小点，$z^*$是上述无约束问题的局部极小点。根据\textbf{无约束优化的一阶必要条件}，对$z$的梯度为0：
+\[
+\nabla_z f(x^*) + \nabla_y f(x^*) \cdot \nabla_z g(z^*) = 0 \tag{1}
+\]
+
+对$h(g(z), z) = 0$关于$z$求导，由链式法则得：
+\[
+\nabla_y h(x^*) \cdot \nabla_z g(z^*) + \nabla_z h(x^*) = 0
+\]
+
+由于$\nabla_y h(x^*)$可逆，解得：
+\[
+\nabla_z g(z^*) = - \left( \nabla_y h(x^*) \right)^{-1} \nabla_z h(x^*) \tag{2}
+\]
+
+将式(2)代入式(1)：
+\[
+\nabla_z f(x^*) - \nabla_y f(x^*) \left( \nabla_y h(x^*) \right)^{-1} \nabla_z h(x^*) = 0
+\]
+
+定义\textbf{拉格朗日乘子}$\lambda^* = \left( \nabla_y h(x^*) \right)^{-T} \nabla_y f(x^*)^\top$（转置是因为矩阵逆的转置等于转置的逆）。
+
+拉格朗日函数为$\mathcal{L}(x, \lambda) = f(x) + \lambda^\top h(x)$，其对$x$的梯度为：
+\[
+\nabla_x \mathcal{L}(x, \lambda) = \nabla f(x) + J_h(x)^\top \lambda
+\]
+
+将$\lambda^*$代入，分块验证：
+\begin{itemize}
+    \item \textbf{$y$分量}：$\nabla_y f(x^*) + \nabla_y h(x^*)^\top \lambda^*$。代入$\lambda^* = \left( \nabla_y h(x^*) \right)^{-T} \nabla_y f(x^*)^\top$，得$\nabla_y f(x^*) + \nabla_y f(x^*) = 0$（转置后等式成立）。
+    \item \textbf{$z$分量}：结合式(1)(2)的推导，可验证$\nabla_z f(x^*) + \nabla_z h(x^*)^\top \lambda^* = 0$。
+\end{itemize}
+
+因此，$\nabla_x \mathcal{L}(x^*, \lambda^*) = 0$；同时，$\nabla_\lambda \mathcal{L}(x^*, \lambda^*) = h(x^*) = 0$（因$x^*$是可行点）。
+
+\textbf{唯一性：}
+
+假设存在两个乘子$\lambda^*$和$\lambda'^*$，满足：
+\[
+\nabla f(x^*) + J_h(x^*)^\top \lambda^* = 0, \quad \nabla f(x^*) + J_h(x^*)^\top \lambda'^* = 0
+\]
+
+两式相减得$J_h(x^*)^\top (\lambda^* - \lambda'^*) = 0$。由于$J_h(x^*)$列满秩，$J_h(x^*)^\top$的零空间仅含零向量，故$\lambda^* = \lambda'^*$，唯一性得证。
+\end{proof}
+
+\subsection{二阶最优性条件及其证明}
+
+\begin{theorem}[二阶必要条件]
+设$x^*$是等式约束优化问题的局部极小点，$f$和$g_i$在$x^*$处二阶连续可微，且约束梯度$\nabla g_1(x^*), \dots, \nabla g_m(x^*)$线性无关。则存在$\lambda^*$使得一阶条件成立，且对任意满足$J_g(x^*)d = 0$的$d \in \mathbb{R}^n$，有：
+\[
+d^T \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d \geq 0
+\]
+其中$\nabla^2_{xx} \mathcal{L}(x^*, \lambda^*)$是拉格朗日函数关于$x$的Hessian矩阵。
+\end{theorem}
+
+\begin{theorem}[二阶充分条件]
+设$f$和$g_i$在$x^*$处二阶连续可微，存在$\lambda^*$满足一阶条件，且对任意非零向量$d$满足$J_g(x^*)d = 0$，有：
+\[
+d^T \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d > 0
+\]
+则$x^*$是严格局部极小点。
+\end{theorem}
+
+\begin{proof}[二阶必要条件证明]
+要证明\textbf{等式约束优化的二阶必要条件}，我们通过\textbf{泰勒展开}结合\textbf{一阶必要条件}推导，步骤如下：
+
+考虑等式约束优化问题：
+\[
+\begin{cases} \min_{x \in \mathbb{R}^n} & f(x) \\ \text{s.t.} & h_i(x) = 0,\ i=1,\dots,m \end{cases}
+\]
+其中$x^*$是局部极小点，$f, h_i$二阶连续可微，且约束梯度$\nabla h_1(x^*), \dots, \nabla h_m(x^*)$线性无关（约束规格满足）。
+
+根据\textbf{一阶必要条件（拉格朗日条件）}，存在拉格朗日乘子$\lambda^* = (\lambda_1^*, \dots, \lambda_m^*)^\top$，使得：
+\[
+\begin{cases} \nabla_x \mathcal{L}(x^*, \lambda^*) = \nabla f(x^*) + \sum_{i=1}^m \lambda_i^* \nabla h_i(x^*) = 0 \\ h(x^*) = 0 \end{cases}
+\]
+其中拉格朗日函数$\mathcal{L}(x, \lambda) = f(x) + \lambda^\top h(x)$。
+
+考虑\textbf{切空间中的方向}$d \in \mathbb{R}^n$，即满足约束雅可比矩阵$J_h(x^*)$零空间的方向：
+\[
+J_h(x^*) d = 0 \implies \nabla h_i(x^*)^\top d = 0,\ \forall i=1,\dots,m
+\]
+（该方向$d$是"不违反约束的微小移动方向"，即当$t$充分小时，$x^* + t d$是可行点）。
+
+对$f(x^* + t d)$做\textbf{二阶泰勒展开}：
+\[
+f(x^* + t d) = f(x^*) + t \nabla f(x^*)^\top d + \frac{t^2}{2} d^\top \nabla^2 f(x^*) d + o(t^2)
+\]
+
+对每个约束$h_i(x^* + t d)$做\textbf{一阶泰勒展开}（因$h_i(x^*) = 0$且$\nabla h_i(x^*)^\top d = 0$，一阶项为0）：
+\[
+h_i(x^* + t d) = 0 + t \nabla h_i(x^*)^\top d + \frac{t^2}{2} d^\top \nabla^2 h_i(x^*) d + o(t^2) = 0 \quad (\text{可行点})
+\]
+
+由一阶条件$\nabla f(x^*) = - \sum_{i=1}^m \lambda_i^* \nabla h_i(x^*)$，代入$\nabla f(x^*)^\top d$得：
+\[
+\nabla f(x^*)^\top d = - \sum_{i=1}^m \lambda_i^* \nabla h_i(x^*)^\top d = 0 \quad (\text{因 } \nabla h_i(x^*)^\top d = 0)
+\]
+
+因此，$f(x^* + t d) - f(x^*)$的展开式可简化为：
+\[
+f(x^* + t d) - f(x^*) = \frac{t^2}{2} d^\top \left( \nabla^2 f(x^*) + \sum_{i=1}^m \lambda_i^* \nabla^2 h_i(x^*) \right) d + o(t^2)
+\]
+
+注意到拉格朗日函数关于$x$的\textbf{二阶Hessian矩阵}为：
+\[
+\nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) = \nabla^2 f(x^*) + \sum_{i=1}^m \lambda_i^* \nabla^2 h_i(x^*)
+\]
+
+因此，上式可写为：
+\[
+f(x^* + t d) - f(x^*) = \frac{t^2}{2} d^\top \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d + o(t^2)
+\]
+
+由于$x^*$是\textbf{局部极小点}，存在$\delta > 0$，使得对所有$t \in (0, \delta)$，若$x^* + t d$可行，则$f(x^* + t d) \geq f(x^*)$。
+
+因此，对充分小的$t > 0$，有：
+\[
+\frac{t^2}{2} d^\top \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d + o(t^2) \geq 0
+\]
+
+两边除以$\frac{t^2}{2}$（$t > 0$，故$\frac{t^2}{2} > 0$），并令$t \to 0$，得：
+\[
+d^\top \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d \geq 0
+\]
+
+对任意满足$J_h(x^*) d = 0$的$d \in \mathbb{R}^n$，有$d^\top \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d \geq 0$，即二阶必要条件成立。
+\end{proof}
+
+\begin{proof}[二阶充分条件证明]
+证明二阶充分条件，通过泰勒展开和严格局部极小的定义推导，步骤如下：
+
+考虑等式约束优化问题：
+\[
+\begin{cases} \min_{x \in \mathbb{R}^n} & f(x) \\ \text{s.t.} & h_i(x) = 0,\ i=1,\dots,m \end{cases}
+\]
+
+已知：
+\begin{enumerate}
+    \item $f, h_i$在$x^*$处\textbf{二阶连续可微}；
+    \item 存在拉格朗日乘子$\lambda^*$，满足\textbf{一阶拉格朗日条件}：$\nabla_x \mathcal{L}(x^*, \lambda^*) = 0$且$h(x^*) = 0$（其中$\mathcal{L}(x, \lambda) = f(x) + \lambda^\top h(x)$是拉格朗日函数）；
+    \item 对任意\textbf{非零}向量$d \in \mathbb{R}^n$满足$J_h(x^*) d = 0$（即$\nabla h_i(x^*)^\top d = 0,\ \forall i=1,\dots,m$），有$d^\top \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d > 0$（拉格朗日函数关于$x$的Hessian矩阵在切空间方向上正定）。
+\end{enumerate}
+
+\paragraph{证明目标}
+需证明$x^*$是\textbf{严格局部极小点}，即存在邻域$\mathcal{N}(x^*)$，使得对所有可行点$x \in \mathcal{N}(x^*)$且$x \neq x^*$，有$f(x) > f(x^*)$。
+
+\paragraph{证明步骤}
+
+\textbf{步骤1：可行点的局部参数化（切空间方向）}
+
+设$d \in \mathbb{R}^n$满足$J_h(x^*) d = 0$（称此类$d$为\textbf{切空间方向}，沿该方向移动不违反约束）。对充分小的$t$，定义$x(t) = x^* + t d$。
+
+对约束$h_i(x(t))$做\textbf{二阶泰勒展开}：
+\[
+h_i(x(t)) = h_i(x^*) + t \nabla h_i(x^*)^\top d + \frac{t^2}{2} d^\top \nabla^2 h_i(x^*) d + o(t^2)
+\]
+
+由$h_i(x^*) = 0$且$\nabla h_i(x^*)^\top d = 0$，得：
+\[
+h_i(x(t)) = \frac{t^2}{2} d^\top \nabla^2 h_i(x^*) d + o(t^2)
+\]
+
+当$t$充分小时，$h_i(x(t)) = 0$（高阶小量可忽略），故$x(t)$是\textbf{可行点}。
+
+\textbf{步骤2：拉格朗日函数的二阶泰勒展开}
+
+拉格朗日函数$\mathcal{L}(x, \lambda^*) = f(x) + (\lambda^*)^\top h(x)$，对$x(t)$做\textbf{二阶泰勒展开}：
+\[
+\mathcal{L}(x(t), \lambda^*) = \mathcal{L}(x^*, \lambda^*) + t \nabla_x \mathcal{L}(x^*, \lambda^*)^\top d + \frac{t^2}{2} d^\top \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d + o(t^2)
+\]
+
+由\textbf{一阶拉格朗日条件}$\nabla_x \mathcal{L}(x^*, \lambda^*) = 0$，上式简化为：
+\[
+\mathcal{L}(x(t), \lambda^*) = \mathcal{L}(x^*, \lambda^*) + \frac{t^2}{2} d^\top \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d + o(t^2) \tag{1}
+\]
+
+\textbf{步骤3：结合可行点的目标函数}
+
+因$x(t)$是可行点（$h(x(t)) = 0$），故$\mathcal{L}(x(t), \lambda^*) = f(x(t))$。同时，$\mathcal{L}(x^*, \lambda^*) = f(x^*)$（因$h(x^*) = 0$）。
+
+将式(1)改写为：
+\[
+f(x(t)) = f(x^*) + \frac{t^2}{2} d^\top \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d + o(t^2)
+\]
+
+\textbf{步骤4：利用二阶正定性推导严格不等式}
+
+由已知条件，对\textbf{非零}$d$，有$d^\top \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d > 0$。因此，存在$t_0 > 0$，当$0 < |t| < t_0$时：
+\[
+\frac{t^2}{2} d^\top \nabla^2_{xx} \mathcal{L}(x^*, \lambda^*) d + o(t^2) > 0
+\]
+即$f(x(t)) > f(x^*)$。
+
+\textbf{步骤5：验证严格局部极小}
+
+由隐函数定理，可行域在$x^*$附近的局部结构可由所有切空间方向$d$生成的$x(t)$覆盖。因此，存在$x^*$的邻域$\mathcal{N}(x^*)$，使得对所有可行点$x \in \mathcal{N}(x^*)$且$x \neq x^*$，必有$f(x) > f(x^*)$，即$x^*$是\textbf{严格局部极小点}。
+\end{proof}

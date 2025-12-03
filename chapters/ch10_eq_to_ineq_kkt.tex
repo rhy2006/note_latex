@@ -1,0 +1,299 @@
+\chapter{从等式约束到不等式约束：KKT}
+
+\section{为什么需要KKT}
+
+等式约束优化（拉格朗日乘子法）仅能处理光滑边界、无需区分约束是否"起作用"的场景；而不等式约束的可行集有"内部/边界（活跃约束）"，可行方向呈锥形，等式方法无法区分活跃约束、也没法处理约束梯度需非负权重的需求。KKT正是补上这一缺口，将"目标在可行方向不下降"的几何要求，转化为含"活跃约束区分、非负乘子、互补松弛"的代数条件，从而能解不等式约束的优化问题。
+
+\section{不等式约束建模}
+
+\subsection{等式约束优化问题（基础模型）}
+设优化目标为最小化\textbf{目标函数}$f(\boldsymbol{x})$，仅受\textbf{等式约束}限制，数学建模如下：
+\[
+\begin{cases}
+\min_{\boldsymbol{x} \in \mathbb{R}^n} \, f(\boldsymbol{x}) \\
+\text{subject to} \quad g_i(\boldsymbol{x}) = 0 \quad (i = 1, 2, \dots, m)
+\end{cases}
+\]
+其中：
+
+\begin{itemize}
+    \item $\boldsymbol{x} = (x_1, x_2, \dots, x_n)^T$是$n$维决策变量（$\mathbb{R}^n$表示$n$维实数空间）；
+    \item $f: \mathbb{R}^n \to \mathbb{R}$是连续可微的目标函数（映射到实数域）；
+    \item $g_i: \mathbb{R}^n \to \mathbb{R}$（$i=1,\dots,m$）是连续可微的等式约束函数，$m < n$（约束数量少于变量维度，保证可行集非空）。
+\end{itemize}
+
+\subsection{含不等式约束的优化问题（扩展模型）}
+在等式约束基础上引入\textbf{不等式约束}，形成更通用的优化模型：
+\[
+\begin{cases}
+\min_{\boldsymbol{x} \in \mathbb{R}^n} \, f(\boldsymbol{x}) \\
+\text{subject to} \quad 
+\begin{aligned}
+g_i(\boldsymbol{x}) &= 0 \quad (i = 1, 2, \dots, m) \\
+h_j(\boldsymbol{x}) &\leq 0 \quad (j = 1, 2, \dots, p)
+\end{aligned}
+\end{cases}
+\]
+其中：
+
+\begin{itemize}
+    \item 新增$p$个连续可微的\textbf{不等式约束函数}$h_j: \mathbb{R}^n \to \mathbb{R}$（$j=1,\dots,p$），约束满足$h_j(\boldsymbol{x}) \leq 0$；
+    \item 可行集定义为$\mathcal{X} = \{\boldsymbol{x} \in \mathbb{R}^n \mid g_i(\boldsymbol{x})=0, h_j(\boldsymbol{x}) \leq 0, \forall i,j\}$，最优解需在$\mathcal{X}$内使$f(\boldsymbol{x})$最小；
+    \item 需通过\textbf{积极约束集}$\mathcal{A}(\boldsymbol{x}^*) = \{ j \in \{1,\dots,p\} \mid h_j(\boldsymbol{x}^*) = 0 \}$区分"起作用"（边界）与"不起作用"（内部）的不等式约束，为后续KKT条件奠基。
+\end{itemize}
+
+\section{KKT条件的推导}
+
+\subsection{一阶必要条件（KKT条件）的严格数学建模}
+
+\subsubsection{前提假设}
+设约束优化问题为：
+\[
+\mathcal{P}: \begin{cases}
+\min_{\boldsymbol{x} \in \mathbb{R}^n} \, f(\boldsymbol{x}) \\
+\text{s.t.} \quad g_i(\boldsymbol{x}) = 0 \quad (i=1,2,\dots,m) \\
+\quad \quad h_j(\boldsymbol{x}) \leq 0 \quad (j=1,2,\dots,p)
+\end{cases}
+\]
+其中：
+
+\begin{itemize}
+    \item $f, g_i, h_j \in C^1(\mathbb{R}^n)$（均为一阶连续可微函数）；
+    \item $\boldsymbol{x}^* \in \mathcal{X}$（$\mathcal{X}$为可行集，即$\mathcal{X} = \{\boldsymbol{x} \mid g_i(\boldsymbol{x})=0, h_j(\boldsymbol{x})\leq0\}$），且$\boldsymbol{x}^*$是$\mathcal{P}$的\textbf{局部极小点}；
+    \item 满足\textbf{约束规格（Constraint Qualification, CQ）}（后续定义）。
+\end{itemize}
+
+\subsubsection{数学结论}
+存在拉格朗日乘子$\lambda^* = (\lambda_1^*, \lambda_2^*, \dots, \lambda_m^*)^T \in \mathbb{R}^m$和$\mu^* = (\mu_1^*, \mu_2^*, \dots, \mu_p^*)^T \in \mathbb{R}^p$，使得以下4个条件同时成立：
+
+\begin{enumerate}
+    \item \textbf{平稳性条件}（目标梯度与约束梯度平衡）：
+    \[
+    \nabla f(\boldsymbol{x}^*) + \sum_{i=1}^m \lambda_i^* \nabla g_i(\boldsymbol{x}^*) + \sum_{j=1}^p \mu_j^* \nabla h_j(\boldsymbol{x}^*) = \boldsymbol{0} \in \mathbb{R}^n
+    \]
+    
+    \item \textbf{原始可行性条件}（解满足所有约束）：
+    \[
+    h_j(\boldsymbol{x}^*) \leq 0 \quad \forall j \in \{1,2,\dots,p\}
+    \]
+    （注：等式约束$g_i(\boldsymbol{x}^*) = 0$已隐含在$\boldsymbol{x}^* \in \mathcal{X}$中，此处补充不等式约束的显式条件）
+    
+    \item \textbf{对偶可行性条件}（不等式约束乘子非负）：
+    \[
+    \mu_j^* \geq 0 \quad \forall j \in \{1,2,\dots,p\}
+    \]
+    
+    \item \textbf{互补松弛条件}（非活跃约束乘子为0）：
+    \[
+    \mu_j^* h_j(\boldsymbol{x}^*) = 0 \quad \forall j \in \{1,2,\dots,p\}
+    \]
+\end{enumerate}
+
+\subsection{约束规格（CQ）的严格数学建模}
+约束规格是保证"局部极小点满足KKT条件"的关键假设，以下为两类核心CQ的严格定义：
+
+\subsubsection{线性无关约束规格（Linear Independence Constraint Qualification, LICQ）}
+设$\boldsymbol{x}^* \in \mathcal{X}$，记\textbf{积极约束集}$\mathcal{A}(\boldsymbol{x}^*) = \{ j \in \{1,\dots,p\} \mid h_j(\boldsymbol{x}^*) = 0 \}$（即不等式约束中"起作用"的集合）。
+
+若向量集合：
+\[
+\mathcal{G}(\boldsymbol{x}^*) = \left\{ \nabla g_i(\boldsymbol{x}^*) \mid i=1,\dots,m \right\} \cup \left\{ \nabla h_j(\boldsymbol{x}^*) \mid j \in \mathcal{A}(\boldsymbol{x}^*) \right\}
+\]
+满足\textbf{线性无关}（即不存在不全为零的常数$\alpha_1,\dots,\alpha_m, \beta_j (j\in\mathcal{A}(\boldsymbol{x}^*))$，使得$\sum_{i=1}^m \alpha_i \nabla g_i(\boldsymbol{x}^*) + \sum_{j\in\mathcal{A}(\boldsymbol{x}^*)} \beta_j \nabla h_j(\boldsymbol{x}^*) = \boldsymbol{0}$），则称在$\boldsymbol{x}^*$处满足LICQ。
+
+\subsubsection{Mangasarian-Fromovitz约束规格（Mangasarian-Fromovitz Constraint Qualification, MFCQ）}
+设$\boldsymbol{x}^* \in \mathcal{X}$，若满足以下两个条件：
+
+\begin{enumerate}
+    \item 等式约束梯度集$\{ \nabla g_i(\boldsymbol{x}^*) \mid i=1,\dots,m \}$线性无关；
+    \item 存在可行方向$\boldsymbol{d} \in \mathbb{R}^n \setminus \{ \boldsymbol{0} \}$（非零方向），使得：
+    \[
+    \nabla g_i(\boldsymbol{x}^*)^T \boldsymbol{d} = 0 \quad \forall i \in \{1,\dots,m\}
+    \]
+    \[
+    \nabla h_j(\boldsymbol{x}^*)^T \boldsymbol{d} < 0 \quad \forall j \in \mathcal{A}(\boldsymbol{x}^*)
+    \]
+\end{enumerate}
+
+则称在$\boldsymbol{x}^*$处满足MFCQ。
+
+\begin{remark}
+MFCQ是弱于LICQ的约束规格，即LICQ成立可推出MFCQ成立，但反之不成立。
+\end{remark}
+
+\subsection{LICQ下KKT条件的严格证明建模}
+
+\subsubsection{第一步：定义线性化可行方向锥}
+设$\boldsymbol{x}^*$是$\mathcal{P}$的局部极小点，且在$\boldsymbol{x}^*$处满足LICQ。定义\textbf{线性化可行方向锥}：
+\[
+\mathcal{F}(\boldsymbol{x}^*) = \left\{ \boldsymbol{d} \in \mathbb{R}^n \mid \nabla g_i(\boldsymbol{x}^*)^T \boldsymbol{d} = 0 \ (\forall i=1,\dots,m), \ \nabla h_j(\boldsymbol{x}^*)^T \boldsymbol{d} \leq 0 \ (\forall j \in \mathcal{A}(\boldsymbol{x}^*)) \right\}
+\]
+几何意义：$\mathcal{F}(\boldsymbol{x}^*)$是在$\boldsymbol{x}^*$处"沿该方向移动，线性近似下仍可行"的所有方向集合。
+
+\subsubsection{第二步：证明核心引理}
+
+\begin{lemma}
+对所有$\boldsymbol{d} \in \mathcal{F}(\boldsymbol{x}^*)$，有$\nabla f(\boldsymbol{x}^*)^T \boldsymbol{d} \geq 0$。
+\end{lemma}
+
+\begin{proof}[证明（反证法）]
+假设存在$\boldsymbol{d}_0 \in \mathcal{F}(\boldsymbol{x}^*)$使得$\nabla f(\boldsymbol{x}^*)^T \boldsymbol{d}_0 < 0$。
+
+由LICQ成立，根据隐函数定理，可构造\textbf{可行曲线}：
+\[
+\boldsymbol{x}(t) = \boldsymbol{x}^* + t \boldsymbol{d}_0 + o(t) \quad (t \geq 0)
+\]
+其中$o(t)$是高阶无穷小（满足$\lim_{t \to 0^+} \frac{\|o(t)\|}{t} = 0$），且曲线满足：
+
+\begin{enumerate}
+    \item 对等式约束：$g_i(\boldsymbol{x}(t)) = 0 + t \nabla g_i(\boldsymbol{x}^*)^T \boldsymbol{d}_0 + o(t) = o(t)$（因$\boldsymbol{d}_0 \in \mathcal{F}(\boldsymbol{x}^*)$，故$\nabla g_i(\boldsymbol{x}^*)^T \boldsymbol{d}_0 = 0$）；
+    \item 对积极不等式约束（$j \in \mathcal{A}(\boldsymbol{x}^*)$）：$h_j(\boldsymbol{x}(t)) = 0 + t \nabla h_j(\boldsymbol{x}^*)^T \boldsymbol{d}_0 + o(t) \leq 0 + o(t)$（因$\boldsymbol{d}_0 \in \mathcal{F}(\boldsymbol{x}^*)$，故$\nabla h_j(\boldsymbol{x}^*)^T \boldsymbol{d}_0 \leq 0$）。
+\end{enumerate}
+
+取充分小的$t_0 > 0$，当$t \in (0, t_0)$时：
+\begin{itemize}
+    \item $|o(t)| < t \cdot \min\left\{ 1, \left| \nabla h_j(\boldsymbol{x}^*)^T \boldsymbol{d}_0 \right| \ (\forall j \in \mathcal{A}(\boldsymbol{x}^*)) \right\}$，故$g_i(\boldsymbol{x}(t)) \approx 0$、$h_j(\boldsymbol{x}(t)) \leq 0$，即$\boldsymbol{x}(t) \in \mathcal{X}$（可行）；
+    \item 目标函数泰勒展开：$f(\boldsymbol{x}(t)) = f(\boldsymbol{x}^*) + t \nabla f(\boldsymbol{x}^*)^T \boldsymbol{d}_0 + o(t) < f(\boldsymbol{x}^*)$（因$\nabla f(\boldsymbol{x}^*)^T \boldsymbol{d}_0 < 0$，且$t$充分小）。
+\end{itemize}
+
+这与$\boldsymbol{x}^*$是局部极小点矛盾，故假设不成立，引理得证。
+\end{proof}
+
+\subsubsection{第三步：应用Farkas引理推导乘子存在性}
+
+\begin{lemma}[Farkas引理]
+设$\boldsymbol{A} \in \mathbb{R}^{k \times n}$，$\boldsymbol{b} \in \mathbb{R}^n$，则以下两个系统\textbf{有且仅有一个}有解：
+\begin{itemize}
+    \item 系统1：$\boldsymbol{A} \boldsymbol{d} \leq \boldsymbol{0}$，$\boldsymbol{b}^T \boldsymbol{d} > 0$（$\boldsymbol{d} \in \mathbb{R}^n$）；
+    \item 系统2：$\boldsymbol{A}^T \boldsymbol{y} = \boldsymbol{b}$，$\boldsymbol{y} \geq \boldsymbol{0}$（$\boldsymbol{y} \in \mathbb{R}^k$）。
+\end{itemize}
+\end{lemma}
+
+将第二步引理转化为Farkas引理的"系统1无解"场景：
+
+构造矩阵$\boldsymbol{A}$和向量$\boldsymbol{b}$如下：
+\begin{itemize}
+    \item $\boldsymbol{A}$的行由$\nabla g_i(\boldsymbol{x}^*)^T$、$-\nabla g_i(\boldsymbol{x}^*)^T$（对应$\nabla g_i(\boldsymbol{x}^*)^T \boldsymbol{d} = 0$拆分为$\leq 0$和$\geq 0$）、$\nabla h_j(\boldsymbol{x}^*)^T$（$j \in \mathcal{A}(\boldsymbol{x}^*)$）组成；
+    \item $\boldsymbol{b} = -\nabla f(\boldsymbol{x}^*)$。
+\end{itemize}
+
+由第二步引理，"系统1：$\boldsymbol{A} \boldsymbol{d} \leq \boldsymbol{0}$，$\boldsymbol{b}^T \boldsymbol{d} > 0$"无解，故由Farkas引理，"系统2：$\boldsymbol{A}^T \boldsymbol{y} = \boldsymbol{b}$，$\boldsymbol{y} \geq \boldsymbol{0}$"有解。
+
+整理系统2的解，可得：
+\begin{itemize}
+    \item 存在$\lambda_i^* \in \mathbb{R}$（对应等式约束的乘子，由$\nabla g_i(\boldsymbol{x}^*)^T$和$-\nabla g_i(\boldsymbol{x}^*)^T$的系数合成）；
+    \item 存在$\mu_j^* \geq 0$（对应积极不等式约束的乘子，由$\nabla h_j(\boldsymbol{x}^*)^T$的系数给出）；
+    \item 对非积极约束（$j \notin \mathcal{A}(\boldsymbol{x}^*)$），令$\mu_j^* = 0$，则平稳性条件成立。
+\end{itemize}
+
+同时，互补松弛条件$\mu_j^* h_j(\boldsymbol{x}^*) = 0$自然满足（非积极约束$\mu_j^* = 0$，积极约束$h_j(\boldsymbol{x}^*) = 0$），对偶可行性条件$\mu_j^* \geq 0$由Farkas引理的$\boldsymbol{y} \geq \boldsymbol{0}$保证。
+
+综上，KKT条件在LICQ下得证。
+
+\subsection{Farkas引理证明}
+
+\begin{theorem}[Farkas引理]
+设$A \in \mathbb{R}^{m \times n}$，$b \in \mathbb{R}^{n}$，则以下两个系统\textbf{有且仅有一个}有解：
+\begin{itemize}
+    \item 系统1：$A x \leq 0$，$b^T x > 0$（$x \in \mathbb{R}^{n}$）；
+    \item 系统2：$A^T y = b$，$y \geq 0$（$y \in \mathbb{R}^{m}$）。
+\end{itemize}
+\end{theorem}
+
+\begin{proof}[证明（分两步核心逻辑）]
+
+\paragraph{第一步：证明"两系统不能同时有解"（矛盾法）}
+
+假设系统1、系统2同时存在解，即存在$x \in \mathbb{R}^n$满足$A x \leq 0$且$b^T x > 0$，同时存在$y \in \mathbb{R}^m$满足$A^T y = b$且$y \geq 0$。
+
+对$b^T x$做代数变形：
+
+由$A^T y = b$，两边转置得$b^T = y^T A$，因此$b^T x = y^T (A x)$。
+
+结合已知条件分析：
+\begin{itemize}
+    \item 因$A x \leq 0$（系统1）且$y \geq 0$（系统2），向量内积$y^T (A x) \leq 0$，即$b^T x \leq 0$；
+    \item 但系统1要求$b^T x > 0$，二者矛盾。故两系统不能同时有解。
+\end{itemize}
+
+\paragraph{第二步：证明"若系统1无解，则系统2必有解"（凸集分离定理+矛盾法）}
+
+\begin{enumerate}
+    \item \textbf{定义闭凸锥}：设集合$C = \{ A^T y \mid y \geq 0 \}$，易证$C$是$\mathbb{R}^n$中的\textbf{闭凸锥}（闭性由线性映射连续性+非负锥闭性保证，凸性由线性映射凸性+非负锥凸性保证）。
+    
+    \item \textbf{反证假设与凸集分离}：
+    
+    假设系统1无解，且系统2也无解（即$b \notin C$，若$b \in C$则存在$y \geq 0$使$A^T y = b$，系统2有解）。
+    
+    因$C$是闭凸集且$b \notin C$，由\textbf{凸集分离定理}，存在非零向量$x \in \mathbb{R}^n$和实数$\alpha \in \mathbb{R}$，使得：
+    \[
+    b^T x > \alpha \quad \text{且} \quad (A^T y)^T x \leq \alpha \quad \forall y \geq 0
+    \]
+    
+    \item \textbf{推导系统1有解（矛盾）}：
+    \begin{itemize}
+        \item 令$y = 0$（因$0 \in \{ y \mid y \geq 0 \}$，故$A^T 0 = 0 \in C$），代入右边不等式得$0^T x \leq \alpha$，即$\alpha \geq 0$，因此$b^T x > \alpha \geq 0$，即$b^T x > 0$。
+        \item 若存在某个分量$(A x)_k > 0$，取$y = t e_k$（$e_k$为第$k$个单位向量，$t > 0$），则$(A^T y)^T x = t (A x)_k$。当$t \to +\infty$时，$t (A x)_k \to +\infty$，与$(A^T y)^T x \leq \alpha$（$\alpha$是固定实数）矛盾。故必须$A x \leq 0$。
+    \end{itemize}
+    
+    此时$x$满足$A x \leq 0$且$b^T x > 0$，即系统1有解——与"系统1无解"的初始假设矛盾。故系统2必有解。
+\end{enumerate}
+\end{proof}
+
+\section{二阶最优性条件}
+
+在学习优化问题时，\textbf{一阶KKT条件}告诉我们"最优解处的梯度要平衡约束"（相当于"坡度为零"），但这只够判断"可能是极值点"——就像走到平地上，分不清是山顶、山谷还是半山腰的平台。而\textbf{二阶最优性条件}是在一阶条件基础上，通过判断"曲率"（相当于地面的弯曲方向），明确这个"平地"到底是不是真正的极小点。
+
+要判断"曲率"，首先得明确：在KKT点$x^*$处，还有可能让目标函数下降的方向有哪些？这个方向集合就是"临界锥"。
+
+\subsection{临界锥}
+
+\begin{definition}[临界锥]
+在KKT点$x^{*}$处，临界锥定义为：
+\[
+\mathcal{C}\left(x^{*}, \mu^{*}\right)=\left\{d \in \mathbb{R}^{n}: \begin{aligned}
+& \nabla g_{i} \left(x^{*}\right)^{T} d=0, \quad i=1, \dots, m \\
+& \nabla h_{j}\left(x^{*}\right)^{T} d=0, \quad j \in \mathcal{A}\left(x^{*}\right) \text{ 且 } \mu_{j}^{*}>0 \\
+& \nabla h_{j}\left(x^{*}\right)^{T} d \leq 0, \quad j \in \mathcal{A}\left(x^{*}\right) \text{ 且 } \mu_{j}^{*}=0
+\end{aligned}\right\}
+\]
+\end{definition}
+
+临界锥包含了在$x^{*}$处所有可能的"候选下降方向"，即"在不违反任何约束的前提下，可能让目标函数下降的所有方向"。
+
+\subsection{二阶必要条件}
+
+\begin{theorem}[二阶必要条件]
+设$x^*$是优化问题的\textbf{局部极小点}，且满足线性无关约束规格（LICQ），$(\lambda^*,\mu^*)$是对应的KKT乘子，则对所有方向$d \in \mathcal{C}(x^*,\mu^*)$，有：
+\[
+d^T \nabla_{xx}^2 \mathcal{L}(x^*,\lambda^*,\mu^*) d \geq 0
+\]
+\end{theorem}
+
+其中：
+\begin{itemize}
+    \item \textbf{拉格朗日函数}：$\mathcal{L}(x,\lambda,\mu) = f(x) + \sum_{i=1}^m \lambda_i g_i(x) + \sum_{j=1}^p \mu_j h_j(x)$，其中$\lambda \in \mathbb{R}^m$、$\mu \in \mathbb{R}^p$为拉格朗日乘子；
+    \item \textbf{拉格朗日Hessian矩阵}：$\nabla_{xx}^2 \mathcal{L}(x^*,\lambda^*,\mu^*)$是拉格朗日函数在$(x^*,\lambda^*,\mu^*)$处关于$x$的二阶偏导数矩阵（Hessian矩阵），严格定义为：
+    \[
+    \nabla_{xx}^2 \mathcal{L}(x^*,\lambda^*,\mu^*) = \nabla^2 f(x^*) + \sum_{i=1}^m \lambda_i^* \nabla^2 g_i(x^*) + \sum_{j=1}^p \mu_j^* \nabla^2 h_j(x^*)
+    \]
+    其中$\nabla^2 f(x^*)$、$\nabla^2 g_i(x^*)$、$\nabla^2 h_j(x^*)$分别表示$f$、$g_i$、$h_j$在$x^*$处的Hessian矩阵（$n \times n$对称矩阵）。
+\end{itemize}
+
+\begin{remark}
+"必要条件"的意思是：\textbf{如果$x^*$是局部极小点，那么在所有"可能下降的方向"（临界锥内），综合曲率必须≥0}。
+\end{remark}
+
+\subsection{二阶充分条件}
+
+\begin{theorem}[二阶充分条件]
+设$x^*$是优化问题的\textbf{可行点}（满足$g_i(x^*)=0$、$h_j(x^*)\leq0$），存在乘子$(\lambda^*,\mu^*)$使得$(x^*,\lambda^*,\mu^*)$满足KKT条件，且对所有\textbf{非零方向}$d \in \mathcal{C}(x^*,\mu^*)$，有：
+\[
+d^T \nabla_{xx}^2 \mathcal{L}(x^*,\lambda^*,\mu^*) d > 0
+\]
+则$x^*$是优化问题的\textbf{严格局部极小点}。
+\end{theorem}
+
+\begin{remark}
+"充分条件"的意思是：\textbf{只要在所有"可能下降的方向"（临界锥内的非零方向），综合曲率都>0，那么$x^*$一定是局部极小点}。
+\end{remark}

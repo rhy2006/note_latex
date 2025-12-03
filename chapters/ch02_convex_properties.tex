@@ -1,0 +1,427 @@
+% 凸优化3（章节已存在，无需重复）
+
+\chapter{凸优化的基本性质}
+\section{凸优化问题的形式}
+
+\subsection{一般优化模型}
+
+一个一般优化问题的数学表达式为：
+\begin{equation}
+\min _{x \in \mathbb{R}^{n}} f_{0}(x) \quad \text{s.t.} \quad f_{i}(x) \leq 0, \, i=1, \ldots, m ; \quad h_{j}(x)=0, \, j=1, \ldots, p
+\end{equation}
+其中各部分含义如下：
+
+\begin{itemize}
+\item \textbf{目标函数}：$f_{0}(x)$，即需要最小化的函数；
+\item \textbf{约束函数}：
+  \begin{itemize}
+  \item 不等式约束：$f_{i}(x) \leq 0$（共$m$个，$i$取值为1到$m$）；
+  \item 等式约束：$h_{j}(x) = 0$（共$p$个，$j$取值为1到$p$）；
+  \end{itemize}
+\item \textbf{可行域}：满足所有约束条件的变量集合，定义为 $X = \{x \mid f_{i}(x) \leq 0, \, h_{j}(x) = 0\}$。
+\end{itemize}
+
+\subsection{凸优化的定义}
+
+\begin{definition}[凸优化问题]
+当且仅当满足以下三个条件时，一般优化问题是凸优化问题：
+
+\begin{itemize}
+\item 目标函数 $f_{0}(x)$ 为\textbf{凸函数}；
+\item 不等式约束函数 $f_{i}(x)$（$i=1,\ldots,m$）均为\textbf{凸函数}；
+\item 等式约束函数 $h_{j}(x)$（$j=1,\ldots,p$）均为\textbf{仿射函数}，即满足形式 $h_{j}(x) = a_{j}^{T} x + b_{j}$（其中$a_{j}$为向量，$b_{j}$为常数）。
+\end{itemize}
+\end{definition}
+
+此时，凸优化问题可简化描述为：\textbf{minimize a convex function over a convex set}（在凸集上最小化凸函数）。
+
+
+\section{凸函数的定义以及性质}
+
+\subsection{定义与几何意义}
+
+\subsubsection{数学定义}
+\begin{definition}
+函数 $f: \mathbb{R}^n \to \mathbb{R}$ 是\textbf{凸函数}，当且仅当对任意 $x_1, x_2 \in \text{dom}(f)$（$\text{dom}(f)$表示函数$f$的定义域）和任意 $\theta \in [0,1]$，满足以下不等式：
+\begin{equation}
+f\left(\theta x_1 + (1-\theta) x_2\right) \leq \theta f\left(x_1\right) + (1-\theta) f\left(x_2\right)
+\end{equation}
+\end{definition}
+
+\subsubsection{几何意义}
+
+凸函数的曲线始终位于连接两点 $(x_1, f(x_1))$和 $(x_2, f(x_2))$的割线之下。
+
+\begin{quote}
+\textit{直观理解：在函数定义域内任取两点，两点间的割线不会低于函数曲线本身。}
+\end{quote}
+
+\subsection{Jensen 不等式}
+Jensen 不等式是凸函数最重要的性质之一，具体表述如下：
+\begin{theorem}[Jensen 不等式]
+若 $f$为凸函数，$\{x_i\}$为 $\text{dom}(f)$内的任意点集，$\{\theta_i\}$为非负权重且满足 $\sum_{i} \theta_i = 1$，则：
+\begin{equation}
+f\left(\sum_{i} \theta_i x_i\right) \leq \sum_{i} \theta_i f\left(x_i\right)
+\end{equation}
+\end{theorem}
+
+\subsubsection{应用场景}
+
+Jensen 不等式不仅是判定函数凸性的重要依据，还广泛应用于：
+
+\begin{itemize}
+\item 概率论（如期望相关不等式推导）；
+\item 信息论（如 KL 散度、熵函数的性质分析）；
+\item 期望下界的证明。
+\end{itemize}
+
+\subsubsection{典型示例}
+
+若 $f(x) = x^2$（已知为凸函数），对随机变量 $X$应用 Jensen 不等式，可得：
+\[
+(\mathbb{E}[X])^2 \leq \mathbb{E}[X^2]
+\]
+（其中 $\mathbb{E}[X]$表示 $X$的期望，$\mathbb{E}[X^2]$表示 $X^2$的期望）。
+
+\subsection{一阶条件(First-order condition)}
+
+\paragraph{适用前提}
+
+函数 $f$可微（即梯度 $\nabla f(x)$在定义域内存在）。
+
+\paragraph{判定准则}
+\begin{proposition}
+函数 $f$是凸函数，当且仅当对任意 $x, y \in \text{dom}(f)$，满足：
+\begin{equation}
+f(y) \geq f(x) + \nabla f(x)^T (y - x)
+\end{equation}
+\end{proposition}
+
+\paragraph{几何与直观意义}
+
+\begin{itemize}
+\item 数学层面：函数在任意点 $x$处的切平面（或切线，当 $n=1$时）是函数的\textbf{全局下界}；
+\item 梯度意义：梯度 $\nabla f(x)$始终指向函数的上升方向。
+\end{itemize}
+
+\subsection{二阶条件(Hessian 判定)}
+
+\paragraph{适用前提}
+
+函数 $f$二阶可微（即 Hessian 矩阵 $\nabla^2 f(x)$在定义域内存在）。
+
+\paragraph{判定准则}
+\begin{proposition}
+函数 $f$是凸函数，当且仅当对任意 $x \in \text{dom}(f)$，其 Hessian 矩阵满足\textbf{半正定}：
+\begin{equation}
+f \text{ 是凸的} \quad \Leftrightarrow \quad \nabla^2 f(x) \succeq 0, \, \forall x
+\end{equation}
+\end{proposition}
+
+\paragraph{强凸函数的延伸判定}
+\begin{definition}
+当且仅当对任意 $x \in \text{dom}(f)$，Hessian 矩阵满足\textbf{正定}（$\nabla^2 f(x) \succ 0$）时，函数 $f$为\textbf{强凸函数}（强凸是凸函数的更强形式）。
+\end{definition}
+
+\paragraph{强凸性定义}
+
+\begin{definition}[强凸函数（等价定义）]
+函数 $f$称为强凸函数，若存在常数 $\mu>0$，对所有 $x, y$：
+\begin{equation}
+f(y) \geq f(x)+\nabla f(x)^{T}(y-x)+\frac{\mu}{2}\| y-x\| ^{2}
+\end{equation}
+
+其中 $\mu$称为强凸系数。
+\end{definition}
+
+这意味着：
+函数不仅“向上弯”，而且弯曲程度有下界；
+强凸函数具有唯一最优解。
+
+\begin{itemize}
+\item 性质1：强凸函数有且仅有一个极小点；
+\item 性质2：梯度法在强凸问题上以线性速率收敛
+\end{itemize}
+
+\paragraph{证明}
+
+\begin{proof}[证明：强凸函数梯度法线性收敛]
+
+\subparagraph{证明前提}
+
+\begin{definition}[Lipschitz连续]
+梯度Lipschitz连续（工程中常用假设）：存在$L>0$，对所有$x,y$有$\|\nabla f(x) - \nabla f(y)\| \leq L\|x - y\|$。
+\end{definition}
+
+\begin{itemize}
+\item 强凸函数$f$满足\textbf{梯度Lipschitz连续}；
+\item 梯度法迭代公式：$x_{k+1} = x_k - \alpha \nabla f(x_k)$，其中步长$\alpha$取$\alpha = \frac{1}{L}$（最优步长选择）；
+\item $x^*$为强凸函数的唯一极小点，故$\nabla f(x^*) = 0$。
+\end{itemize}
+
+\subparagraph{证明过程（核心推导）}
+
+1. \textbf{展开迭代误差范数}：  
+对$x_{k+1} = x_k - \alpha \nabla f(x_k)$，两边减去$x^*$得：  
+\[x_{k+1} - x^* = (x_k - x^*) - \alpha \nabla f(x_k)\]  
+取平方范数（利用$\|a - b\|^2 = \|a\|^2 - 2a^T b + \|b\|^2$）：  
+\begin{equation}
+\|x_{k+1} - x^*\|^2 = \|x_k - x^*\|^2 - 2\alpha \nabla f(x_k)^T(x_k - x^*) + \alpha^2\|\nabla f(x_k)\|^2 \tag{1}
+\end{equation}
+
+2. \textbf{利用强凸性放缩梯度项}：  
+对$x=x_k, y=x^*$应用强凸定义，代入$\nabla f(x^*) = 0$：  
+\[f(x^*) \geq f(x_k) + \nabla f(x_k)^T(x^* - x_k) + \frac{\mu}{2}\|x^* - x_k\|^2\]  
+由于$f(x^*) \leq f(x_k)$（$x^*$是最优解），整理得：  
+\begin{equation}
+\nabla f(x_k)^T(x_k - x^*) \geq \frac{\mu}{2}\|x_k - x^*\|^2 \tag{2}
+\end{equation}
+
+3. \textbf{利用Lipschitz连续放缩梯度范数}：  
+对$x=x_k, y=x^*$应用梯度Lipschitz连续，代入$\nabla f(x^*) = 0$：  
+\[
+\|\nabla f(x_k)\| \leq L\|x_k - x^*\| \implies \|\nabla f(x_k)\|^2 \leq L^2\|x_k - x^*\|^2 \tag{3}
+\]
+
+4. \textbf{代入迭代公式证线性收敛}：  
+将(2)(3)代入(1)，并取$\alpha = \frac{1}{L}$：  
+\begin{align}
+\|x_{k+1} - x^*\|^2 &\leq \|x_k - x^*\|^2 - 2\alpha \cdot \frac{\mu}{2}\|x_k - x^*\|^2 + \alpha^2 L^2\|x_k - x^*\|^2 \nonumber \\
+&= \|x_k - x^*\|^2 \left(1 - \alpha \mu + \alpha^2 L^2\right) \nonumber \\
+&= \|x_k - x^*\|^2 \left(1 - \frac{\mu}{L} + \frac{L^2}{L^2}\right) \nonumber \\
+&= \|x_k - x^*\|^2 \left(1 - \frac{\mu}{L}\right)
+\end{align}  
+其中$0 < 1 - \frac{\mu}{L} < 1$（因$\mu < L$，强凸系数小于Lipschitz常数）。
+
+\subparagraph{结论}
+
+梯度法迭代误差满足$\|x_{k+1} - x^*\|^2 \leq \gamma \|x_k - x^*\|^2$（$\gamma = 1 - \frac{\mu}{L}$为收敛因子），即\textbf{以线性速率收敛}。
+\end{proof}
+
+
+\section{全局与局部最优}
+
+\subsection{定义回顾}
+
+对于一般优化问题，局部最优解与全局最优解的定义如下：
+
+\begin{definition}[局部与全局最优解]
+\begin{itemize}
+\item \textbf{局部最优解}：存在$\epsilon>0$，使得对所有满足$\|x - x^{*}\| < \epsilon$的可行点$x$，均有$f(x) \geq f(x^{*})$（即$x^{*}$在自身邻域内是最优的）。
+\item \textbf{全局最优解}：对所有可行域内的点$x$，均有$f(x) \geq f(x^{*})$（即$x^{*}$在整个可行域内是最优的）。
+\end{itemize}
+\end{definition}
+
+\subsection{凸优化的核心定理}
+
+\begin{theorem}[凸优化局部最优即全局最优]
+若目标函数$f$是凸函数，且优化问题的可行域$\mathcal{X}$是凸集，则\textbf{任何局部最优解都是全局最优解}。
+\end{theorem}
+
+\begin{proof}[证明（反证法）]
+\begin{enumerate}
+\item \textbf{假设前提}：假设$x^{*}$是局部最优解，但非全局最优解。根据全局最优解的定义，此时存在可行点$x' \in \mathcal{X}$，使得$f(x') < f(x^{*})$。
+
+\item \textbf{构造凸组合}：定义凸组合$x_{\theta} = (1-\theta)x^{*} + \theta x'$，其中$\theta \in (0,1)$（即$x_{\theta}$是$x^{*}$与$x'$连线上的点）。
+
+\item  \textbf{利用凸集性质}：由于可行域$\mathcal{X}$是凸集，根据凸集的定义，$x_{\theta} \in \mathcal{X}$（即$x_{\theta}$是可行点）。
+
+\item \textbf{利用凸函数性质}：由于$f$是凸函数，根据凸函数的定义：  
+\[
+f(x_{\theta}) = f\left((1-\theta)x^{*} + \theta x'\right) \leq (1-\theta)f(x^{*}) + \theta f(x')
+\]
+
+\item  \textbf{推出矛盾}：结合假设$f(x') < f(x^{*})$，代入上式得：  
+\[
+f(x_{\theta}) \leq (1-\theta)f(x^{*}) + \theta f(x') < (1-\theta)f(x^{*}) + \theta f(x^{*}) = f(x^{*})
+\]  
+即$f(x_{\theta}) < f(x^{*})$。又因为当$\theta$足够小时，$x_{\theta}$满足$\|x_{\theta} - x^{*}\| = \theta\|x' - x^{*}\| < \epsilon$（符合局部最优解的邻域条件），这与$x^{*}$是局部最优解的定义矛盾。
+\end{enumerate}
+\end{proof}
+
+\subsection{强凸函数的唯一最优性}
+
+若$f$为$\mu$-强凸函数（$\mu>0$为强凸系数），则：
+
+\begin{itemize}
+\item \textbf{最优解唯一性}：强凸函数的最优解有且仅有一个（不存在多个最优解）；
+\item \textbf{函数值差的二次下界}：距离最优点的函数值差满足二次下界关系（具体表现为$f(x) - f(x^{*}) \geq \frac{\mu}{2}\|x - x^{*}\|^2$）。
+\end{itemize}
+
+该性质为算法收敛性分析（如梯度下降法、牛顿法等）提供了重要的理论基础。
+
+
+\section{凸优化的几何意义}
+
+\subsection{可行域与等高线}
+
+\begin{definition}[等高线与凸优化几何特征]
+凸优化的几何特征具有明确的直观性：\textbf{目标函数的等高线（level set）与凸形可行域（convex feasible region）相切的点，即为全局最优点}。
+\end{definition}
+
+几何补充：等高线是目标函数值等于某一常数的点的集合（如二次函数的椭圆等高线）；由于可行域是凸集，其边界呈“凸向外侧”的形态，二者相切时仅存在唯一接触点，该点即为整个可行域内使目标函数最小的点。
+
+\subsection{法向条件（支撑超平面）}
+
+\begin{definition}[支撑超平面]
+从几何角度分析，凸优化问题的最优点 $x^*$处必然存在一个\textbf{支撑超平面（supporting hyperplane）}，其数学表达式为：
+\begin{equation}
+\mathbf{a}^T \left( x - x^* \right) \geq 0, \quad \forall x \in \mathcal{X}
+\end{equation}
+其中：
+
+\begin{itemize}
+\item $\mathbf{a} = \nabla f(x^*)$，即目标函数 $f$在最优点 $x^*$处的梯度；
+\item $\mathcal{X}$为优化问题的可行域。
+\end{itemize}
+\end{definition}
+
+\subsubsection{支撑超平面的核心意义：}
+
+\begin{itemize}
+\item 几何层面：该超平面与凸集 $\mathcal{X}$在 $x^*$处“相切”，且凸集 $\mathcal{X}$完全位于超平面的一侧；
+\item 优化层面：超平面的法向量（即梯度 $\nabla f(x^*)$）指向目标函数的上升方向，因此不存在从 $x^*$出发、指向可行域内部且能使目标函数值下降的方向；
+\item 理论关联：该条件与KKT条件（Karush-Kuhn-Tucker条件）完全对应，本质是“梯度与约束法向一致”的几何体现。
+\end{itemize}
+
+\begin{quote}
+\textit{KKT条件后面会讲到}
+\end{quote}
+
+\subsection{凸组合与最优性路径}
+
+在凸优化问题中，全局最优点 $x^*$常可解释为\textbf{多个可行极值点的凸组合（convex combination）}，具体表现为：  
+
+以资源分配问题为例：若存在 $k$种可行的资源配置方案，每种方案对应可行域 $\mathcal{X}$内的一个点 $x_i$（$i=1,2,\dots,k$），则最终的全局最优解 $x^*$一定位于这些点的\textbf{凸包（convex hull）}内。  
+
+凸包：
+\begin{equation}
+\text{conv}\{x_1, x_2, \dots, x_k\} = \left\{ \sum_{i=1}^k \theta_i x_i \mid \theta_i \geq 0, \sum_{i=1}^k \theta_i = 1 \right\}
+\end{equation}
+
+\subsubsection{关键结论：}
+
+凸包是包含所有点 $x_1, x_2, \dots, x_k$的最小凸集，全局最优解 $x^*$位于凸包内，体现了凸优化最优解的“折中性质”——最终解是多个局部可行方案的合理权衡，而非极端方案。
+
+\begin{quote}
+\textit{几何示例：若两种可行方案对应平面上的两个点，其凸包为两点间的线段，全局最优解即为线段上使目标函数最小的点。}
+\end{quote}
+
+
+\section{凸优化的转化以及示例}
+
+\subsection{优化问题的等价变换以及实例}
+
+\begin{definition}[等价变换条件]
+等价变换需满足三个条件：\textbf{最优值相同、最优解可相互恢复、可行域一一对应}。
+\end{definition}
+
+\subsubsection{1. SVM 软间隔原问题 → Hinge 损失形式（最典型等价转化）}
+
+\begin{itemize}
+\item \textbf{原问题（含松弛变量）}：软间隔 SVM 原问题为  
+\begin{equation}
+\min _{w, b, \xi} \frac{1}{2}\| w\| ^{2}+C \sum_{i} \xi_{i}, \quad \text{s.t.} \quad y_{i}\left(w^{T} x_{i}+b\right) \geq 1-\xi_{i}, \xi_{i} \geq 0
+\end{equation}  
+该问题含变量 $w, b, \xi$，约束涉及松弛变量 $\xi_i$，求解需同时处理三类变量。
+
+\item \textbf{等价转化：Hinge 损失形式}：通过 “松弛变量消去”的等价思路，将原问题转化为仅含 $w$ 的无约束问题：  
+\begin{equation}
+\min _{w} \frac{1}{2}\| w\| ^{2}+C \sum_{i} \max \left(0,1-y_{i} w^{T} x_{i}\right)
+\end{equation}  
+其中 $\max(0,1-y_i w^T x_i)$ 为 Hinge 损失，本质是用“损失项”隐式替代松弛变量 $\xi_i$（$\xi_i \geq \max(0,1-y_i w^T x_i)$，最小化目标时二者取等）。
+
+\item \textbf{等价性验证}：  
+
+  \begin{itemize}
+  \item 最优值相同：原问题通过 $\xi_i$ 控制“间隔违反程度”，Hinge 损失直接量化该程度，最小化目标的核心逻辑一致；  
+  \item 最优解可恢复：从 Hinge 损失的最优解 $w^*$，可反向计算 $b^*$（如通过支持向量满足 $y_i(w^{*T}x_i + b^*) = 1$），松弛变量 $\xi_i^* = \max(0,1-y_i w^{*T}x_i)$；  
+  \item 可行域一一对应：原问题的可行域（$\xi_i \geq 0$ 且 $y_i(w^T x_i + b) \geq 1-\xi_i$）与 Hinge 损失的“隐含可行域”（无显式约束，但损失项确保等价约束）完全对应 。
+  \end{itemize}
+
+\item \textbf{实例价值}：转化后无需处理松弛变量 $\xi$，将带约束问题简化为无约束凸优化，可直接用梯度法求解，同时保持 SVM“最大间隔分类”的核心逻辑。
+\end{itemize}
+\subsubsection{2. 逻辑回归：似然最大化 → 负对数似然最小化（单调变换等价）}
+
+\begin{itemize}
+\item \textbf{原问题（非凸形式）}：逻辑回归的核心是“最大化样本似然概率”，似然函数为 $\prod_{i=1}^m \sigma(y_i w^T x_i)$（$\sigma(\cdot)$ 为 Sigmoid 函数），该函数是乘积形式，非凸且求解困难。
+
+\item \textbf{等价转化：凸形式}：利用对数函数的单调性（$\log(\cdot)$ 单调递增，最大化 $f$ 等价于最大化 $\log f$），再通过“取负”将最大化问题转化为最小化问题，最终目标函数为：  
+\end{itemize}
+\begin{equation}
+\min_w -\sum_{i=1}^m \log\left(\sigma(y_i w^T x_i)\right)
+\end{equation}  
+该“负对数似然函数为凸函数”。
+
+\begin{itemize}
+\item \textbf{等价性验证}：由于 $\log(\cdot)$ 和“取负”均为单调变换，原问题的最优解 $w^*$ 与转化后问题的最优解完全一致，最优值仅相差常数倍（对数与负号的影响），满足等价变换的三个条件 。
+
+\item \textbf{实例价值}：将非凸的乘积似然转化为凸的加法函数，可通过梯度法、牛顿法高效求解，且保障解为全局最优。
+\end{itemize}
+
+\subsubsection{3. 最小二乘回归：隐含约束 → 无约束凸问题（可行域等价）}
+
+- \textbf{原问题（隐含约束）}：最小二乘的目标是 
+\begin{equation}
+\min_w \|Xw - y\|^2
+\end{equation} 
+其“可行域”本质是“所有使误差有定义的 $w$”（即全空间 $\mathbb{R}^n$），无显式约束。
+\begin{itemize}
+\item \textbf{等价转化：无约束凸问题}：无需引入额外变量，直接利用凸函数判定条件——目标函数的 Hessian 矩阵为 $2X^T X \succeq 0$（半正定），因此是凸函数。此时问题等价于“在凸集（全空间）上最小化凸函数”，完全符合凸优化的定义。
+
+\item \textbf{实例价值}：通过“可行域等价”避免复杂约束处理，直接用闭式解（$w^* = (X^T X)^{-1} X^T y$）或梯度法求解，是机器学习中最易实现的凸优化实例之一。
+\end{itemize}
+\subsection{非凸到凸的重构思路在实例中的延伸（解决“非凸建模难题”）}
+
+四类非凸到凸的重构技术：\textbf{函数松弛、对偶化、变量替换、线性化}，这些思路在实例中被灵活应用，让原本非凸的模型具备凸优化的“全局最优性”。
+
+\subsubsection{1. 函数松弛：Hinge 损失替代 0-1 损失（SVM 中的非凸近似）}
+
+SVM 的 Hinge 损失形式，本质是“函数松弛”技术的落地——用凸上界替代非凸项：
+
+\begin{itemize}
+\item \textbf{非凸痛点}：分类任务的理想损失是“0-1 损失”（正确分类损失为 0，错误分类损失为 1），但 0-1 损失是阶梯函数，非凸且不可微，无法用于凸优化建模。
+\item \textbf{凸松弛方案}：根据“函数松弛”思路，用 Hinge 损失（$\max(0,1-y_i w^T x_i)$）作为 0-1 损失的\textbf{凸上界}——对所有 $w$，均有 $\max(0,1-y_i w^T x_i) \geq \mathbb{I}(y_i w^T x_i < 1)$（$\mathbb{I}$ 为指示函数，即 0-1 损失） 。
+\item \textbf{实例应用}：SVM 选择 Hinge 损失作为目标项，既保留“惩罚间隔违反样本”的核心逻辑，又通过“凸松弛”让目标函数成为凸函数 。此时问题转化为凸优化，保障全局最优，避免 0-1 损失导致的“局部最优陷阱”。
+\end{itemize}
+
+\subsubsection{2. 对偶化：Lasso 回归的对偶问题（处理不可微凸项）}
+
+Lasso 回归的求解，依赖 “对偶化”技术——通过拉格朗日对偶将原问题转化为更易求解的凸问题：
+
+\begin{itemize}
+\item \textbf{原问题痛点}：Lasso 回归的目标函数为 $\min_w \|Xw - y\|^2 + \lambda\|w\|_1$，其中 $\|w\|_1$ 是凸函数但不可微（在 $w_i=0$ 处无梯度），直接用梯度法求解困难 。
+
+\item \textbf{对偶化方案}：根据 “对偶化”思路，构造原问题的拉格朗日对偶问题，给出 Lasso 对偶问题为：  
+
+
+\begin{equation}
+\max _{\alpha} \sum_{i} \alpha_{i}-\frac{1}{2} \sum_{i, j} \alpha_{i} \alpha_{j} y_{i} y_{j}\left(x_{i}^{T} x_{j}\right), \quad \text{s.t.} \quad 0 \leq \alpha_{i} \leq C, \sum_{i} \alpha_{i} y_{i}=0
+\end{equation}  
+该对偶问题是\textbf{凸二次规划}（目标函数为二次函数，Hessian 半正定；约束均为线性，可行域为凸集） 。
+
+
+\item \textbf{实例价值}：对偶问题虽与原问题变量不同（从 $w$ 变为 $\alpha$），但满足 Slater 条件（对偶间隙为 0），最优值与原问题相同，且对偶问题可通过成熟的二次规划算法求解（无需处理不可微性）。求解后再通过 $w^* = \sum_{i} \alpha_i^* y_i x_i$ 恢复原问题最优解，同时保留 Lasso“稀疏性”的核心特性 。
+\end{itemize}
+
+\subsubsection{3. 线性化：投资组合优化的非线性约束处理（Markowitz 模型延伸）}
+
+\begin{itemize}
+\item \textbf{基础模型（凸二次规划）}：标准 Markowitz 模型为 
+\begin{equation}
+\min_w \frac{1}{2}w^T \Sigma w - \mu^T w, \quad \text{s.t.} \quad 1^T w = 1, \, w_i \geq 0
+\end{equation} 
+由于 $\Sigma$（协方差矩阵）半正定，目标函数凸，可行域凸，属于凸二次规划 。
+\item \textbf{非凸扩展痛点}：实际投资中常存在非线性约束（如交易成本为 $w_i^2$，或最小持仓比例为非线性函数），这些约束会破坏可行域的凸性，导致模型非凸。
+\item \textbf{线性化方案}：根据“线性化”思路，对非线性约束进行“局部线性近似”或“分段线性逼近（PWL）”——例如将交易成本 $w_i^2$ 在可行域内分段用线性函数近似，每个分段内约束为线性，整体可行域仍为凸集 。
+\item \textbf{实例价值}：线性化后模型仍保持“目标函数凸+可行域凸”的特性，保障全局最优，解决了“实际投资约束下模型不可解”的问题，同时让最优解仍落在“有效前沿”上 。
+\end{itemize}
+\subsection{转化逻辑的核心价值}
+
+\textbf{所有实例均通过“等价变换”或“非凸重构”，最终满足凸优化的定义（目标函数凸+可行域凸），进而利用 “局部最优即全局最优”的定理，实现“高效求解”与“结果可靠”的双重目标}。具体可总结为三类转化路径：
+
+\begin{itemize}
+\item \textbf{复杂凸 → 简洁凸}：如 SVM 原问题→Hinge 损失（消去松弛变量）、最小二乘→无约束问题（简化可行域）；
+\item \textbf{非凸 → 凸近似}：如 0-1 损失→Hinge 损失（函数松弛）、非线性约束→分段线性约束（线性化）；
+\item \textbf{难求解凸 → 易求解凸}：如 Lasso 原问题→对偶问题（处理不可微性）。
+\end{itemize}

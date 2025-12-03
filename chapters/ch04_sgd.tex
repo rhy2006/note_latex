@@ -1,0 +1,696 @@
+\chapter{随机梯度下降（Stochastic Gradient Descent, SGD）}
+
+\section{随机梯度下降基础}
+
+当面对大规模数据集（数据量记为$N$，单个数据为$x_{i}$，$i=1, \dots, N$），需要优化目标函数 $\min _{x} \sum_{i=1}^{N} f_{i}(x)$ 时，若无法一次性获取所有数据 $x_{i}$ 或对应函数 $f_{i}$，则可通过随机梯度下降（SGD）实现优化。
+
+\subsection{核心思路：用“部分数据”估算梯度}
+由于无法计算全部数据的完整梯度 $\nabla f$，SGD通过\textbf{随机选取部分数据（称为“小批量”，记为 $\mathcal{B}^{(k)}$，其数据量记为 $|\mathcal{B}^{(k)}|$）}，用这部分数据的梯度平均值近似整体梯度，即：
+\begin{equation}
+\nabla f \approx \frac{1}{|\mathcal{B}^{(k)}|} \sum_{i \in \mathcal{B}^{(k)}} \nabla \ell_{i}\left(x^{(k)}\right)
+\end{equation}
+其中 $\nabla \ell_{i}\left(x^{(k)}\right)$ 是单个数据 $i$ 在当前参数 $x^{(k)}$ 下的梯度，近似得到的整体梯度记为 $g^{(k)}$，即 $g^{(k)}=\frac{1}{|\mathcal{B}^{(k)}|} \sum_{i \in \mathcal{B}^{(k)}} \nabla \ell_{i}\left(x^{(k)}\right)$。
+
+\subsection{完整更新流程}
+SGD的优化流程是在传统梯度下降（GD）基础上，修改“梯度计算方式”，具体步骤如下：
+\begin{enumerate}
+    \item \textbf{初始值设定}：从初始参数 $x^{(0)}$ 开始，迭代次数 $k=0$；
+    \item \textbf{确定下降方向}：基于随机选取的小批量数据 $\mathcal{B}^{(k)}$，计算近似梯度 $g^{(k)}$，下降方向为 $\Delta x^{(k)}=-g^{(k)}$（负梯度方向，保证函数值下降）；
+    \item \textbf{选择步长（学习率）}：步长 $\alpha^{(k)}$ 可设为常数，也可随迭代次数动态调整（如后期逐步减小，避免参数震荡）；
+    \item \textbf{参数更新}：按以下公式更新参数，使新参数对应的函数值更小（即 $f(x^{(k+1)}) < f(x^{(k)})$），之后迭代次数 $k=k+1$，重复步骤2-4：
+    \begin{equation}
+    x^{(k+1)}=x^{(k)}-\alpha^{(k)} g^{(k)}
+    \end{equation}
+\end{enumerate}
+
+\subsection{关键超参数}
+SGD的效果依赖两个核心超参数的设置，需根据数据和任务调整：
+\begin{itemize}
+    \item \textbf{批量大小（Batch Size）}：即小批量数据 $\mathcal{B}^{(k)}$ 包含的数据量 $|\mathcal{B}^{(k)}|$。批量越大，梯度估算越精准（噪声越小），但计算速度越慢；批量越小，计算越快，但梯度噪声越大，参数易震荡。
+    \item \textbf{学习率（Learning Rate）}：即步长 $\alpha^{(k)}$。学习率过大可能导致参数“越过”最优解，函数值不下降反而上升；学习率过小则参数更新缓慢，需更多迭代次数才能收敛。
+\end{itemize}
+
+\section{一个随机估计问题}
+
+先来看一个随机估计问题。
+
+\subsection{有限样本下的均值计算}
+\begin{itemize}
+    \item 当我们采样得到 $n$ 个样本时，均值可表示为：
+    \begin{equation}
+    f_{n}(x)=\frac{1}{n} \sum_{i \in[1, n]} f\left(x_{i}\right)
+    \end{equation}
+    \item 当继续采样到第 $n+1$ 个样本时，新的均值为：
+    \begin{equation}
+    f_{n+1}(x)=\frac{1}{n+1} \sum_{i \in[1, n+1]} f\left(x_{i}\right)
+    \end{equation}
+\end{itemize}
+
+\subsection{前后均值的递推关系}
+通过数学变形，可建立 $f_{n}(x)$ 与 $f_{n+1}(x)$ 的关联，避免重复计算所有样本：
+\begin{equation}
+\begin{aligned}
+f_{n+1}(x) & =\frac{1}{n+1}\left(f\left(x_{n+1}\right)+\sum_{i \in[1, n]} f\left(x_{i}\right)\right) \\
+& =\frac{1}{n+1}\left(f\left(x_{n+1}\right)+n f_{n}(x)\right) \\
+& =\left(1-\frac{1}{n+1}\right) f_{n}(x)+\frac{1}{n+1} f\left(x_{n+1}\right)
+\end{aligned}
+\end{equation}
+若令步长 $\alpha=\frac{1}{n+1}$，则递推式可简化为更通用的形式：
+\begin{equation}
+f_{n+1}(x)=f_{n}(x)+\alpha\left(f\left(x_{n+1}\right)-f_{n}(x)\right)
+\end{equation}
+这意味着新均值=旧均值+步长$\times$（新样本值-旧均值），无需存储所有历史样本，仅需保留旧均值即可更新。
+
+\subsection{均值收敛的条件}
+要保证当样本数量 $n \to \infty$ 时，均值 $f_{n}(x)$ 能稳定收敛到真实期望，需满足 Robbins-Monro（1951）提出的步长条件：
+\begin{equation}
+\sum_{n=1}^{\infty} \alpha_{n}=\infty, \quad \sum_{n=1}^{\infty} \alpha_{n}^{2}<\infty
+\end{equation}
+\begin{itemize}
+    \item 第一个条件 $\sum_{n=1}^{\infty} \alpha_{n}=\infty$：保证步长累积足够大，均值能持续向真实期望靠近，避免“半途停滞”；
+    \item 第二个条件 $\sum_{n=1}^{\infty} \alpha_{n}^{2}<\infty$：保证步长衰减足够快，避免后期新样本对均值的干扰过大，导致结果震荡。
+\end{itemize}
+
+\section{Robbins-Monro（RM）算法}
+
+首先回顾 Robbins-Monro（RM）算法的基础，它是推导 SGD 的起点。
+
+\subsection{RM算法的目标}
+RM算法用于求解\textbf{黑箱函数的根}，即找到 $w^*$ 满足：
+\begin{equation}
+g(w^*) = 0
+\end{equation}
+其中 $g: \mathbb{R}^d \to \mathbb{R}^d$ 是未知函数（黑箱），仅能通过带噪声的观测获取信息：
+\begin{equation}
+\tilde{g}(w, \eta) = g(w) + \eta
+\end{equation}
+$\eta$ 是观测噪声，满足 $\mathbb{E}[\eta \mid H_k] = 0$（$H_k = \{w_k, w_{k-1}, \dots\}$ 为历史信息），且方差有界 $\mathbb{E}[\eta^2 \mid H_k] < \infty$。
+
+\subsection{RM算法的迭代公式}
+为求解 $g(w) = 0$，RM算法的迭代更新规则为：
+\begin{equation}
+w_{k+1} = w_k - a_k \cdot \tilde{g}(w_k, \eta_k)
+\end{equation}
+其中 $a_k > 0$ 是步长序列，$w_k$ 是第 $k$ 次迭代的估计值。
+
+\subsection{RM算法的收敛条件}
+要保证 $w_k \to w^*$（几乎必然收敛），需满足3个核心条件：
+\begin{enumerate}
+    \item \textbf{函数单调性}：$g(w)$ 单调递增，且梯度有界 $0 < c_1 \leq \nabla_w g(w) \leq c_2$（确保根唯一）；
+    \item \textbf{步长条件}：$\sum_{k=1}^\infty a_k = \infty$（步长不收敛太快，保证能逼近根）且 $\sum_{k=1}^\infty a_k^2 < \infty$（步长趋于0，避免震荡）；
+    \item \textbf{噪声条件}：$\mathbb{E}[\eta_k \mid H_k] = 0$ 且 $\mathbb{E}[\eta_k^2 \mid H_k] < \infty$（噪声无偏且方差有界）。
+\end{enumerate}
+
+\section{SGD之问：为何能够收敛？}
+
+在此之前，我们先来看一个引理。
+
+\begin{lemma}[Robbins–Siegmund 超鞅收敛引理]
+给定非负可测序列 $(X_k)$，满足条件：
+\begin{equation}
+\mathbb{E}[X_{k+1}\mid \mathcal F_k] \le (1 - a_k) X_k + b_k,
+\end{equation}
+其中：
+\begin{itemize}
+    \item $0 \le a_k \le 1$，控制“衰减比例”；
+    \item $b_k \ge 0$，表示小的扰动或噪声；
+    \item $\sum a_k = \infty$，保证长期衰减足够；
+    \item $\sum b_k < \infty$，保证扰动总量有限。
+\end{itemize}
+
+\textbf{结论：}
+\begin{enumerate}
+    \item $(X_k)$ 几乎处处收敛；
+    \item $\sum a_k X_k < \infty$ 几乎处处成立。
+\end{enumerate}
+
+\textbf{直观理解：}
+\begin{itemize}
+    \item $(X_k)$ 类似“衰减量 + 小扰动”的随机过程；
+    \item $(a_k)$ 保证每步都有“收敛拉力”，而 $(b_k)$ 干扰有限；
+    \item 因此 $(X_k)$ 不会发散，最终收敛，并且累计衰减量 $(\sum a_k X_k)$ 有限。
+\end{itemize}
+\end{lemma}
+
+Robbins–Siegmund 引理提供了\textbf{在随机衰减 + 有限扰动下的序列收敛保证}，是随机优化与在线算法理论分析的核心工具。
+
+\subsection{设定与记号}
+\begin{itemize}
+    \item \textbf{数据与参数}：数据（或小批量数据）为 $x^{(k)}$，模型参数为 $\theta \in \mathbb{R}^{d}$（$d$ 为参数维度）。
+    \item \textbf{目标函数}：目标函数定义为期望损失，即 $f(\theta) \triangleq \mathbb{E}_{x}[L(x, \theta)]$，其中 $L(x, \theta)$ 是单个数据（或小批量数据）的损失函数。
+    \item \textbf{SGD更新公式}：参数更新遵循 $\pmb{\theta}^{(k+1)}=\pmb{\theta}^{(k)}-\eta_{k} g^{(k)}$，其中 $\eta_k$ 是第 $k$ 步的学习率，$g^{(k)} \equiv \nabla_{\theta} L\left(x^{(k)}, \theta^{(k)}\right)$ 是第 $k$ 步的随机梯度（基于小批量数据计算）。
+    \item \textbf{噪声分解}：将随机梯度拆分为“真实梯度”与“噪声”两部分，即 $g^{(k)}=\nabla f(\theta^{(k)})+\xi^{(k)}$。其中 $\nabla f(\theta^{(k)})$ 是目标函数在 $\theta^{(k)}$ 处的真实梯度，$\xi^{(k)}$ 是随机噪声，且满足条件 $\mathbb{E}[\xi^{(k)} | \mathcal{F}_{k}]=0$（$\mathcal{F}_{k}$ 表示到第 $k$ 步的所有观测信息集合，即“自然滤子”）。
+\end{itemize}
+这一分解恰好契合 \textbf{Robbins–Monro框架}：该框架旨在寻找方程 $h(\theta)=0$ 的根（即目标函数极小值点，此时 $\nabla f(\theta^*)=0$），但仅能获得带噪声的观测 $H(\theta, x)$（对应此处的随机梯度 $g^{(k)}$），且观测的期望等于真实函数（即 $\mathbb{E}[g^{(k)} | \mathcal{F}_k] = \nabla f(\theta^{(k)})$）。令 $h(\theta)=\nabla f(\theta)$，即可将 SGD 纳入该框架分析收敛性。
+
+\subsection{收敛性证明的核心假设}
+要证明 SGD 收敛，需满足以下5个关键假设（记 $\theta^*$ 为目标函数极小值点，即 $\nabla f(\theta^*)=0$）：
+\begin{itemize}
+    \item \textbf{(A1) 无偏噪声}：随机梯度的条件期望等于真实梯度，即 $\mathbb{E}[g^{(k)} | \mathcal{F}_{k}]=\nabla f(\theta^{(k)})$。
+    \item \textbf{(A2) 有界二阶矩}：噪声的条件二阶矩有上限，即 $\mathbb{E}[\left\|\xi^{(k)}\right\|^{2} | \mathcal{F}_{k}] \leq\sigma^{2}+c\left\|\nabla f(\theta^{(k)})\right\|^{2}$。其中 $\sigma^2$ 是常数，$c$ 是系数，该假设限制了噪声的“强度”，避免噪声过大导致参数震荡不收敛。常用特例为“常数方差”，即 $\mathbb{E}[\left\|\xi^{(k)}\right\|^{2} | \mathcal{F}_{k}] \leq\sigma^{2}$。
+    \item \textbf{(A3) L平滑}：目标函数的梯度满足 Lipschitz 连续条件，即 $\|\nabla f(\theta)-\nabla f(\phi)\| \leq L\|\theta-\phi\|$（$L$ 为 Lipschitz 常数）。
+    \item \textbf{(A4) $\mu$-强凸}：目标函数是 $\mu$-强凸的，即 $(\nabla f(\theta)-\nabla f(\phi))^{\top}(\theta-\phi) \geq \mu\|\theta-\phi\|^{2}$（$\mu>0$ 为强凸系数）。强凸性保证目标函数有唯一极小值点 $\theta^*$，且参数会“持续向极小值点靠近”，不会在多个局部极小值间徘徊。
+    \item \textbf{(A5) Robbins–Monro步长条件}：学习率序列 $\{\eta_k\}$ 需满足两个条件：
+    \begin{enumerate}
+        \item $\sum_{k=1}^{\infty} \eta_{k}=\infty$（学习率累积和为无穷大）：保证参数有足够的“推进力”，能持续向极小值点靠近，避免因步长过小而“半途停滞”；
+        \item $\sum_{k=1}^{\infty} \eta_{k}^{2}<\infty$（学习率平方的累积和有限）：保证后期步长足够小，避免参数在极小值点附近“来回震荡”。
+    \end{enumerate}
+    典型的满足该条件的学习率形式为 $\eta_{k}=\frac{\alpha}{k+\beta}$（$\alpha>0$，$\beta \geq 0$）。
+\end{itemize}
+
+\subsection{收敛性结论}
+
+\subsubsection{结论一：几乎处处收敛（基于Robbins–Siegmund引理）}
+\begin{theorem}[a.s. 收敛]
+在假设(A1)–(A5)成立的前提下，SGD生成的参数序列满足：
+\begin{equation}
+\theta^{(k)} \underset{k \to \infty}{\stackrel{a.s.}{\to}} \theta^{*}, \quad \sum_{k=1}^{\infty} \eta_{k}\left\|\nabla f\left(\theta^{(k)}\right)\right\|^{2}<\infty \quad a.s.
+\end{equation}
+其中“a.s.”表示“几乎必然”（即除了概率为0的特殊情况外，参数序列一定收敛到 $\theta^*$）。
+\end{theorem}
+
+\textbf{证明核心思路（关键不等式与引理应用）：}
+\begin{enumerate}
+    \item \textbf{定义距离变量}：令 $\Delta^{(k)} \triangleq \theta^{(k)}-\theta^*$（即当前参数与极小值点的距离向量），需证明 $\|\Delta^{(k)}\| \to 0$（距离趋近于0）。
+    \item \textbf{展开距离平方的递推关系}：根据 SGD 更新公式，展开 $\|\Delta^{(k+1)}\|^2$（第 $k+1$ 步的距离平方）：
+    \begin{equation}
+    \begin{aligned}
+    \left\|\Delta^{(k+1)}\right\|^{2} &= \left\|\theta^{(k+1)}-\theta^*\right\|^{2} \\
+    &= \left\|\theta^{(k)} - \eta_k g^{(k)} - \theta^*\right\|^{2} \\
+    &= \left\|\Delta^{(k)} - \eta_k g^{(k)}\right\|^{2} \\
+    &= \left\|\Delta^{(k)}\right\|^{2} - 2\eta_k \Delta^{(k)\top} g^{(k)} + \eta_k^2 \left\|g^{(k)}\right\|^{2}
+    \end{aligned}
+    \end{equation}
+    \item \textbf{取条件期望并代入假设}：对等式两侧关于 $\mathcal{F}_k$ 取条件期望，结合(A1)（无偏噪声）和(A2)（有界二阶矩），将 $g^{(k)}=\nabla f(\theta^{(k)})+\xi^{(k)}$ 代入，可化简得到：
+    \begin{equation}
+    \begin{aligned}
+    \mathbb{E}\left[\left\|\Delta^{(k+1)}\right\|^{2} | \mathcal{F}_k\right] \leq \mathbb{E}\left[\left\|\Delta^{(k)}\right\|^{2} | \mathcal{F}_k\right] - 2\eta_k \Delta^{(k)\top} \nabla f(\theta^{(k)}) \\
+    + \eta_k^2 \left( \left\|\nabla f(\theta^{(k)})\right\|^2 + \sigma^2 + c\left\|\nabla f(\theta^{(k)})\right\|^2 \right)
+    \end{aligned}
+    \end{equation}
+    \item \textbf{利用强凸与L平滑简化}：由(A4)（$\mu$-强凸）可得 $\Delta^{(k)\top} \nabla f(\theta^{(k)}) \geq \mu \left\|\Delta^{(k)}\right\|^2$；由(A3)（L平滑）可得 $\left\|\nabla f(\theta^{(k)})\right\| \leq L \left\|\Delta^{(k)}\right\|$（因 $\nabla f(\theta^*)=0$）。代入上式后，可整理得到：
+    \begin{equation}
+    \mathbb{E}\left[\left\|\Delta^{(k+1)}\right\|^{2} | \mathcal{F}_k\right] \leq \left(1 - 2\mu \eta_k + C \eta_k^2\right) \left\|\Delta^{(k)}\right\|^2 + \sigma^2 \eta_k^2
+    \end{equation}
+    其中 $C \triangleq (1+c)L^2$（常数）。当 $k$ 足够大时，$\eta_k$ 足够小，可满足 $1 - 2\mu \eta_k + C \eta_k^2 \leq 1 - \mu \eta_k$。
+    \item \textbf{应用Robbins–Siegmund引理}：令 $X_k = \left\|\Delta^{(k)}\right\|^2$（待分析的非负序列），$a_k = \mu \eta_k$，$b_k = \sigma^2 \eta_k^2$，则上述不等式可化为引理要求的形式：
+    \begin{equation}
+    \mathbb{E}\left[X_{k+1} | \mathcal{F}_k\right] \leq (1 - a_k)X_k + b_k
+    \end{equation}
+    结合(A5)，$\sum a_k = \mu \sum \eta_k = \infty$，$\sum b_k = \sigma^2 \sum \eta_k^2 < \infty$，满足引理条件。根据引理可得出：$X_k$ 几乎必然收敛，且 $\sum a_k X_k < \infty$。再结合 $\sum a_k = \infty$，可推出 $\liminf_{k \to \infty} X_k = 0$；又因目标函数强凸（(A4)），最终可得 $X_k \to 0$（即 $\theta^{(k)} \to \theta^*$）几乎必然成立。
+\end{enumerate}
+
+\subsubsection{结论二：强凸下的收敛速率与Polyak–Ruppert平均}
+\begin{theorem}[期望二次误差 $O(1/k)$]
+假设(A1)–(A4)成立，若取学习率 $\eta_k = \frac{\alpha}{k+\beta}$（其中 $\alpha > \frac{1}{\mu}$，$\beta \geq 1$），则存在常数 $K$，使得：
+\begin{equation}
+\mathbb{E}\left[\left\|\theta^{(k)} - \theta^*\right\|^2\right] \leq \frac{K}{k+\beta}
+\end{equation}
+即参数与极小值点的“期望平方距离”随迭代次数 $k$ 增长，以 $O(1/k)$ 的速率衰减。
+\end{theorem}
+
+\begin{proof}
+将结论一证明中的“距离平方的条件期望递推式”取全期望，令 $u_k = \mathbb{E}\left[\left\|\Delta^{(k)}\right\|^2\right]$（期望平方距离），代入 $\eta_k = \frac{\alpha}{k+\beta}$ 后可得到：
+\begin{equation}
+u_{k+1} \leq \left(1 - \frac{2\mu \alpha}{k+\beta} + \frac{C \alpha^2}{(k+\beta)^2}\right) u_k + \frac{\sigma^2 \alpha^2}{(k+\beta)^2}
+\end{equation}
+通过定义辅助变量 $v_k = (k+\beta) u_k$，利用“差分比较法”可证明 $u_k = O(1/k)$，进而得到上述期望误差界。
+\end{proof}
+
+\textbf{随着迭代次数 $k$ 增加，参数与最优解的 “平均距离平方” 会以 $1/k$ 的速度变小}。
+
+\begin{theorem}[Polyak–Ruppert迭代平均的最优渐近方差]
+定义参数的迭代平均为：
+\begin{equation}
+\overline{\theta}^{(T)} \triangleq \frac{1}{T} \sum_{k=1}^{T} \theta^{(k)}
+\end{equation}
+在假设(A1)–(A4)与(A5)（步长 $\eta_k = \frac{\alpha}{k+\beta}$）成立的前提下，有：
+\begin{equation}
+\sqrt{T}\left(\overline{\theta}^{(T)} - \theta^*\right) \Rightarrow \mathcal{N}\left(0, A^{-1} S A^{-\top}\right)
+\end{equation}
+其中 $A \triangleq \nabla^2 f(\theta^*)$（目标函数在极小值点处的 Hessian 矩阵），$S$ 是噪声协方差的极限值。
+\end{theorem}
+
+该结论表明：通过对参数序列做“迭代平均”，可使 SGD 达到随机逼近（SA）框架下的“最优渐近效率”——即平均后的参数估计量，其渐近方差是最小的，在实践中能显著减小噪声导致的参数波动，提升收敛稳定性。
+
+普通 SGD 是“每步更新一个参数，最后用最后一步的参数”；而 Polyak–Ruppert 方法是“先迭代 $T$ 步，得到 $T$ 个参数 $\theta^{(1)},\theta^{(2)},\dots,\theta^{(T)}$，再求它们的平均值 $\overline{\theta}^{(T)} = \frac{1}{T}\sum_{k=1}^T \theta^{(k)}$”。
+
+用“迭代平均”后的参数 $\overline{\theta}^{(T)}$，\textbf{随着迭代次数 $T$ 增加，它与最优解的差距会服从“正态分布”，且这个差距的“波动范围（方差）是最小的”}（即“最优渐近方差”）。
+
+SGD 的收敛性本质上源于 \textbf{Robbins–Monro 随机逼近框架}与 \textbf{Robbins–Siegmund 超鞅引理}的支撑：
+\begin{enumerate}
+    \item 强凸目标函数+满足 Robbins–Monro 条件的学习率（如 $\eta_k \propto 1/k$），可保证参数“几乎处处收敛”到极小值点，且期望二次误差以 $O(1/k)$ 速率衰减；
+    \item 对参数做 Polyak–Ruppert 迭代平均，能进一步优化渐近方差，提升收敛精度与稳定性。
+\end{enumerate}
+
+\subsection{非强凸场景下的SGD收敛性（仅凸/一般非凸）}
+
+在之前的分析中，我们默认目标函数满足“$\mu$-强凸”条件（假设(A4)），但实际场景中很多目标函数不具备强凸性（如仅凸函数、非凸函数），因此需要单独分析这类场景下 SGD 的收敛表现。
+
+\subsubsection{1. 仅凸场景（无强凸性，仅满足凸性）}
+\textbf{核心设定}：此时目标函数可能存在“平坦区域”或“多个最优解（构成凸集）”，无法保证参数收敛到唯一极小值点，但可保证“函数值收敛到最优值”。
+
+\textbf{收敛性结论}：若调整学习率为 $\eta_k = \frac{1}{k^\alpha}$（其中 $\alpha \in (1/2, 1]$，满足 Robbins–Monro 条件 $\sum \eta_k = \infty$ 且 $\sum \eta_k^2 < \infty$），则对参数的迭代平均值 $\overline{\theta}^{(T)} = \frac{1}{T}\sum_{k=1}^T \theta^{(k)}$，有：
+\begin{equation}
+f(\overline{\theta}^{(T)}) - f(\theta^*) = o(1)
+\end{equation}
+即随着迭代次数 $T$ 增大，平均参数对应的函数值会“逐步逼近最优函数值 $f(\theta^*)$”，最终趋近于 0。
+
+若进一步量化收敛速率，通常为 $O\left(\frac{1}{T^{1-\alpha}}\right)$ 量级（如 $\alpha=0.8$ 时，速率为 $O\left(\frac{1}{T^{0.2}}\right)$）——相比强凸场景下的 $O\left(\frac{1}{T}\right)$，仅凸场景的收敛更慢，这是因为缺少强凸性带来的“强制向最优解靠近”的约束。
+
+\subsubsection{2. 一般非凸场景（无凸性，仅满足L-平滑）}
+\textbf{核心设定}：“一般非凸”指目标函数既不满足强凸性，也不满足凸性，仅满足 L-平滑条件（假设(A3)：梯度变化平缓，$\|\nabla f(\theta)-\nabla f(\phi)\| \leq L\|\theta-\phi\|$）。
+这类场景在深度学习中最常见（如神经网络的损失函数），目标函数可能存在大量局部极小值、鞍点，无法保证参数收敛到全局最优解，只能退而求其次——保证参数收敛到“一阶驻点”（即梯度趋近于 0 的点，$\nabla f(\theta) \approx 0$，此时参数再更新也难以显著降低函数值）。
+
+\textbf{收敛性结论}：在无偏噪声（假设(A1)）和噪声方差有界（假设(A2)）的前提下，若采用“分段常数步长”或“$\eta_k = \frac{1}{\sqrt{k}}$ 步长”（注：$\frac{1}{\sqrt{k}}$ 不满足 Robbins–Monro 的 $\sum \eta_k^2 < \infty$，因此不具备“几乎处处收敛”性质，仅能保证“梯度的期望有界”），则有：
+\begin{equation}
+\min_{1 \leq k \leq T} \mathbb{E}\left[\left\|\nabla f(\theta^{(k)})\right\|^2\right] = \mathcal{O}\left(\frac{1}{\sqrt{T}}\right)
+\end{equation}
+该结论的含义是：在 $T$ 次迭代中，\textbf{至少存在某一步的参数 $\theta^{(k)}$，其梯度的期望平方值不超过 $\frac{C}{\sqrt{T}}$（$C$ 为常数）}，且随着 $T$ 增大，这个“最小梯度期望”会以 $\frac{1}{\sqrt{T}}$ 的速率减小，逐步趋近于 0。
+
+需要特别注意：
+\begin{enumerate}
+    \item 该速率是“到一阶驻点”的速率，而非“到全局最优解”的速率——最终参数可能停在局部极小值或鞍点，但这些点的梯度已足够小，函数值难以继续下降；
+    \item 与强凸/仅凸场景不同，非凸场景的收敛结论不涉及“参数是否收敛”或“函数值是否收敛到最优”，仅保证“梯度足够小”，这是因为非凸函数的全局最优解难以通过 SGD 的随机搜索触及，“找到驻点”已是实际能达到的目标。
+\end{enumerate}
+
+\subsubsection{3. 非强凸场景与强凸场景的核心差异}
+为了更清晰理解不同场景的收敛特性，可通过下表对比：
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}llllll@{}}
+\toprule
+\textbf{场景} & \textbf{目标函数性质} & \textbf{收敛目标} & \textbf{学习率要求} & \textbf{收敛速率（期望）} & \textbf{关键限制} \\ \midrule
+强凸 & 强凸+L-平滑 & 全局最优解 $\theta^*$ & $\eta_k \propto \frac{1}{k}$ (满足RM) & $O(1/T)$ & 需强凸性，适用场景有限 \\
+仅凸 & 凸+L-平滑 & 最优函数值 $f(\theta^*)$ & $\eta_k = \frac{1}{k^\alpha}$ ($\alpha \in (0.5,1]$) & $O(1/T^{1-\alpha})$ & 收敛慢，无唯一最优参数 \\
+一般非凸 & L-平滑(无凸性) & 一阶驻点 ($\nabla f \approx 0$) & 分段常数/$\eta_k \propto \frac{1}{\sqrt{k}}$ & $O(1/\sqrt{T})$ (梯度期望) & 仅能到驻点，可能是局部最优 \\ \bottomrule
+\end{tabular}
+\caption{不同场景下的收敛特性对比}
+\end{table}
+
+\subsection{两种不同目标下的步长设计及收敛策略差异}
+
+\subsubsection{1. OGD/Regret（在线学习/长期平均性能）}
+\begin{itemize}
+    \item \textbf{目标}：保证长期平均损失接近最优，即 \textbf{后悔（regret）界} 小。
+    \item \textbf{对应公式常见形式}：
+    \begin{equation}
+    \text{Regret}(T) = \sum_{t=1}^T f_t(x_t) - \min_x \sum_{t=1}^T f_t(x) \le O(\sqrt{T}) \text{ 或 } O(\log T)
+    \end{equation}
+    \item \textbf{步长选择}：通常用 \textbf{非递减或者 $1/\sqrt{t}$ 形式}，保证平均损失下降快。
+\end{itemize}
+
+\subsubsection{2. RM/SA（Robbins–Monro / Stochastic Approximation）}
+\begin{itemize}
+    \item \textbf{目标}：保证\textbf{参数序列几乎处处收敛到最优点}（a.s. convergence），属于点估计/统计意义。
+    \item \textbf{收敛条件}：
+    \begin{equation}
+    \sum_{k=1}^{\infty} a_k = \infty,\quad \sum_{k=1}^{\infty} a_k^2 < \infty
+    \end{equation}
+    \item \textbf{常用步长}：$a_k = 1/k$ 或 $1/k^\gamma$ （$0.5<\gamma\le1$）。
+    \item \textbf{意义}：每步衰减足够慢以保证探索，但衰减快以抑制噪声，满足 Robbins–Siegmund 引理条件。
+\end{itemize}
+
+\begin{itemize}
+    \item 如果使用 \textbf{OGD/Regret 的步长策略} 来保证 \textbf{几乎处处收敛}，可能违反 RM/SA 的平方可积条件（$\sum < \infty$），因此不能保证 a.s. 收敛。
+    \item 反之，如果严格使用 RM/SA 的条件（$\sum < \infty$）来优化在线 regret，可能收敛太慢，导致平均损失下降慢。
+\end{itemize}
+\textbf{关键点}：两种方法的目标不同，不能直接互换步长策略。
+
+\subsubsection{3. 折中 / 统一策略}
+\textbf{选用 $a_k = 1/k^\gamma$ （$0.5< \gamma < 1$）}
+\begin{itemize}
+    \item 满足 RM/SA 条件：$\sum a_k = \infty$ 且 $\sum a_k^2 < \infty$，保证 a.s. 收敛。
+    \item 同时保持较慢衰减，平均性能也不错（在线学习效果可接受）。
+\end{itemize}
+
+\textbf{阶段常数步长 + Polyak–Ruppert 平均 + Doubling Trick}
+\begin{itemize}
+    \item \textbf{阶段常数步长}：将迭代分阶段，每阶段使用\textbf{近似最优常数步长}，提升该阶段的平均损失性能（降低 regret）。
+    \item \textbf{Doubling Trick}：阶段长度每次加倍（doubling trick），保证整体步长衰减满足 RM/SA 条件，确保 a.s. 收敛。
+    \item \textbf{Polyak–Ruppert 平均}：阶段内取参数平均，进一步稳定收敛。
+\end{itemize}
+
+\begin{remark}
+\textbf{OGD/Regret 关注长期平均损失；RM/SA 关注参数几乎处处收敛。两者步长策略冲突，但可以通过衰减指数、阶段常数步长和 Polyak–Ruppert 平均实现折中，兼顾在线性能和几乎处处收敛。}
+\end{remark}
+
+\section{从随机估计到动力学}
+
+从动力学视角分析 SGD，核心是将“离散的参数更新过程”与“连续的物理运动方程”建立关联——通过极限近似，把梯度下降（GD）对应到确定性的常微分方程（ODE），把随机梯度下降（SGD）对应到含噪声的随机微分方程（SDE），从而用物理运动规律解释 SGD 的收敛行为、噪声影响及参数调整逻辑。
+
+\subsection{从GD到ODE：离散更新是梯度流的“显式欧拉积分”}
+梯度下降（GD）的参数更新是离散步骤，而通过“时间标度转换”和“连续极限”，可将其转化为描述“确定性下降运动”的常微分方程（ODE），即“梯度流”。
+
+\subsubsection{1.1 离散更新与时间标度定义}
+GD 的离散更新公式为：
+\begin{equation}
+\theta^{(k+1)} = \theta^{(k)} - \eta \nabla L(\theta^{(k)})
+\end{equation}
+其中：
+\begin{itemize}
+    \item $\theta^{(k)}$：第 $k$ 步的参数；
+    \item $\eta$：步长（学习率）；
+    \item $\nabla L(\theta^{(k)})$：目标函数 $L$ 在 $\theta^{(k)}$ 处的梯度（确定性，无噪声）。
+\end{itemize}
+为建立连续关联，定义“连续时间” $t_k = k \cdot \eta$——即把每一步更新的“步长 $\eta$”视为“时间增量”，迭代次数 $k$ 越多，对应的连续时间 $t_k$ 越大。
+
+\subsubsection{1.2 连续极限：从离散更新到梯度流ODE}
+当步长 $\eta \to 0$（时间增量无限小）、且 $t_k \to t$（连续时间趋近于某个值）时，对 GD 的离散更新公式做“差分近似”：
+左边参数增量除以时间增量，近似为连续时间下的参数变化率（导数）：
+\begin{equation}
+\frac{\theta^{(k+1)} - \theta^{(k)}}{\eta} \Rightarrow \dot{\theta}(t)
+\end{equation}
+右边代入 GD 的更新规则，可得连续时间下的“梯度流方程”（ODE）：
+\begin{equation}
+\dot{\theta}(t) = -\nabla L(\theta(t))
+\end{equation}
+
+\textbf{物理意义}：GD 的离散更新，本质是对“梯度流 ODE”的“显式欧拉数值积分”——每一步按当前梯度方向“迈一小步”，步长越小，离散的参数轨迹越贴近 ODE 描述的“连续下降路径”（类似下山时“小步慢走”更贴近顺滑的山坡轨迹）。
+
+\subsubsection{1.3 数值稳定性与曲率的关系}
+GD 的收敛稳定性（是否会“震荡不收敛”），与目标函数的“曲率”直接相关，可通过二次函数案例直观理解：
+\begin{itemize}
+    \item 若目标函数为二次形式 $L(\theta) = \frac{1}{2}\theta^\top H \theta$（$H \succeq 0$ 为 Hessian 矩阵，代表函数曲率），则 GD 的更新公式可改写为：
+    \begin{equation}
+    \theta^{(k+1)} = (I - \eta H) \theta^{(k)}
+    \end{equation}
+    其中 $I$ 为单位矩阵。
+    \item 收敛条件：该线性迭代收敛的充要条件是“矩阵 $I - \eta H$ 的谱半径 $\rho(I - \eta H) < 1$”，等价于步长需满足：
+    \begin{equation}
+    0 < \eta < \frac{2}{\lambda_{\text{max}}(H)}
+    \end{equation}
+    （$\lambda_{\text{max}}(H)$ 是 Hessian 矩阵的最大特征值，代表函数的“最大曲率”）。
+    \item 一般 L-平滑场景：若目标函数的梯度满足 L-Lipschitz 连续（L 为平滑常数，可理解为“梯度变化的最大速率”），则取 $0 < \eta < \frac{2}{L}$ 可保证每步更新后函数值下降；若同时满足强凸性，取 $0 < \eta \leq \frac{1}{L}$ 还能获得“线性收敛速率”（参数快速靠近最优解）。
+\end{itemize}
+
+\textbf{核心启发（A）}：可将学习率 $\eta$ 视为“时间步长”——函数曲率越大（$\lambda_{\text{max}}(H)$ 或 $L$ 越大），“显式欧拉积分”的稳定范围越窄，GD 需要更小的学习率才能避免震荡；实际中“分段调整学习率”“周期衰减学习率”，本质是通过“细化时间网格”提升数值稳定性，让参数更新更贴合梯度流的顺滑路径。
+
+\subsection{从SGD到SDE：扩散极限与朗之万动力学}
+SGD 的核心是“用随机小批量梯度近似真实梯度”，存在噪声干扰。通过类似的连续极限，可将其转化为含噪声的随机微分方程（SDE），即“朗之万动力学”，从而用“扩散运动”解释 SGD 的噪声探索与收敛平衡。
+
+\subsubsection{2.1 噪声分解：随机梯度的构成}
+SGD 的小批量梯度包含“真实梯度”和“噪声”两部分，分解公式为：
+\begin{equation}
+\nabla L_{\mathcal{B}}(\theta^{(k)}) = \nabla L(\theta^{(k)}) + \xi^{(k)}
+\end{equation}
+其中：
+\begin{itemize}
+    \item $\nabla L_{\mathcal{B}}(\theta^{(k)})$：基于小批量 $\mathcal{B}$ 计算的随机梯度；
+    \item $\nabla L(\theta^{(k)})$：目标函数的真实梯度（确定性部分）；
+    \item $\xi^{(k)}$：小批量采样引入的噪声，满足 $\mathbb{E}[\xi^{(k)} | \theta^{(k)}] = 0$（无偏噪声），其协方差 $\text{Cov}[\xi^{(k)}] \approx \Sigma(\theta^{(k)})$（随参数变化的噪声强度）。
+\end{itemize}
+基于此，SGD 的离散更新公式可改写为：
+\begin{equation}
+\theta^{(k+1)} = \theta^{(k)} - \eta \left( \nabla L(\theta^{(k)}) + \xi^{(k)} \right)
+\end{equation}
+
+\subsubsection{2.2 扩散极限：从离散SGD到SDE（欧拉–丸山连续化）}
+同样定义连续时间 $t_k = k \cdot \eta$，当步长 $\eta \to 0$（时间增量无限小）、且小批量噪声近似高斯分布时，可将 SGD 的离散更新转化为“随机微分方程（SDE）”：
+\begin{equation}
+d\theta_t = -\nabla L(\theta_t) dt + G(\theta_t) dW_t
+\end{equation}
+其中：
+\begin{itemize}
+    \item $\theta_t$：连续时间 $t$ 下的参数；
+    \item $dt$：连续时间增量；
+    \item $dW_t$：多维布朗运动（Wiener 过程），代表连续时间下的随机噪声（均值为 0，方差为 $dt$）；
+    \item $G(\theta_t)$：噪声强度矩阵，满足 $G(\theta_t) G(\theta_t)^\top \approx \eta \cdot \Sigma(\theta_t)$（将离散噪声的协方差与连续时间的噪声强度关联）。
+\end{itemize}
+
+\textbf{规范朗之万形式}：
+若令噪声强度为“各向同性常数”（即不同参数方向的噪声强度相同），设 $G = \sqrt{2T}$（$T$ 为“温度”参数，控制噪声整体强度），则 SDE 可简化为标准的“朗之万动力学方程”：
+\begin{equation}
+d\theta_t = -\nabla L(\theta_t) dt + \sqrt{2T} dW_t
+\end{equation}
+其核心性质是：若存在平稳分布（参数长期运动的稳定概率分布），则该分布与目标函数 $L$ 的 Gibbs 权重成正比，即 $\propto \exp\left(-\frac{L}{T}\right)$——“温度” $T$ 越高，噪声越强，参数探索范围越广（更易跳出局部极小值）；$T$ 越低，噪声越弱，参数越容易收敛到目标函数的低价值区域（极小值附近）。
+
+\subsubsection{2.3 两类极限：消噪极限与扩散极限}
+SGD 的连续极限存在两种典型场景，对应不同的训练阶段目标：
+\begin{itemize}
+    \item \textbf{消噪极限}：若步长 $\eta \to 0$，同时小批量大小 $B$ 增大（使噪声协方差 $\Sigma \to 0$），则 SDE 中的扩散项（噪声部分）$G(\theta_t) dW_t$ 会逐渐消失，SDE 退化为 GD 对应的“梯度流 ODE”——这对应训练后期“增大批量、减小学习率”的策略，目的是“消除噪声，精准收敛到最优解”。
+    \item \textbf{扩散极限}：若按比例调整步长 $\eta$ 和批量大小 $B$（如保持 $\frac{\eta}{B}$ 为常数），使“有效噪声强度”（$\eta \cdot \Sigma$）保持不变，则 SDE 的扩散项非平凡（噪声持续存在）——这对应训练前期“小批量、稍大学习率”的策略，目的是“保留噪声，通过随机探索找到更优的参数区域”。
+\end{itemize}
+
+\subsubsection{2.4 Fokker–Planck视角：参数分布的演化}
+SGD 的参数在连续时间下的概率密度 $p_t(\theta)$（即参数在时刻 $t$ 处于某个值的概率），满足“Fokker–Planck 方程”：
+\begin{equation}
+\partial_t p_t = \nabla \cdot \left( p_t \nabla L \right) + \frac{1}{2} \sum_{i,j} \partial_i \partial_j \left( [D(\theta)]_{ij} p_t \right)
+\end{equation}
+其中 $D(\theta) = G(\theta) G(\theta)^\top$ 是扩散系数矩阵（代表噪声在不同参数方向的强度）。
+
+该方程的意义是：参数密度的变化由两部分驱动——
+\begin{enumerate}
+    \item 确定性漂移项（$\nabla \cdot (p_t \nabla L)$）：由目标函数梯度主导，使参数密度向 $L$ 的低价值区域聚集（类似水流向低处）；
+    \item 随机扩散项（二阶导数项）：由噪声主导，使参数密度向周围扩散（类似墨水在水中扩散）。
+\end{enumerate}
+若 $D(\theta)$ 为常数且各向同性（噪声在所有参数方向强度相同），则平稳密度为 Gibbs 分布；若 $D(\theta)$ 随参数变化或各向异性（不同方向噪声强度不同），则平稳密度会偏离简单的 Gibbs 分布——这解释了实际 SGD 中“噪声具有方向性”的现象：某些参数方向的噪声更强，参数在这些方向的探索更活跃，最终收敛位置也会偏向噪声影响更小的“平坦区域”（与“平坦极小值泛化更好”的经验观察一致）。
+
+\subsection{局部二次近似与OU过程：常步长下的方差-曲率权衡}
+在目标函数的极小值点 $\theta^*$ 附近，可将函数近似为二次形式（局部二次近似），此时 SGD 的连续极限（SDE）可简化为“Ornstein–Uhlenbeck（OU）过程”——通过分析 OU 过程的平稳分布，能清晰理解“参数曲率”与“噪声方差”的平衡关系。
+
+\subsubsection{3.1 局部二次近似}
+在 $\theta^*$ 附近，对目标函数 $L(\theta)$ 做泰勒展开并忽略高阶项，得到二次近似：
+\begin{equation}
+L(\theta) \approx L(\theta^*) + \frac{1}{2} (\theta - \theta^*)^\top H (\theta - \theta^*)
+\end{equation}
+其中 $H = \nabla^2 L(\theta^*)$ 是目标函数在 $\theta^*$ 处的 Hessian 矩阵（$H \succ 0$，因 $\theta^*$ 是极小值点），代表函数在极小值附近的“局部曲率”——$H$ 的特征值越大，对应参数方向的曲率越大（函数在该方向越“陡峭”）。
+
+\subsubsection{3.2 OU过程与平稳协方差}
+令 $\vartheta_t = \theta_t - \theta^*$（参数与极小值点的偏差），代入朗之万 SDE，结合局部二次近似（$\nabla L(\theta_t) \approx H \vartheta_t$），可得偏差 $\vartheta_t$ 满足的 OU 过程：
+\begin{equation}
+d\vartheta_t = -H \vartheta_t dt + \sqrt{2T} dW_t
+\end{equation}
+OU 过程是“带阻尼的线性随机过程”，其核心性质是存在\textbf{平稳分布}（当时间 $t \to \infty$ 时，$\vartheta_t$ 的分布不再变化）：
+\begin{itemize}
+    \item 平稳分布为高斯分布 $\mathcal{N}(0, P)$，其中 $P$ 是协方差矩阵，满足“Lyapunov 方程”：
+    \begin{equation}
+    H P + P H = 2T I
+    \end{equation}
+    （$I$ 为单位矩阵，$T$ 为温度参数）。
+    \item 若噪声为各向异性常数扩散（$D = G G^\top$，非单位矩阵），则 Lyapunov 方程推广为：
+    \begin{equation}
+    H P + P H = D
+    \end{equation}
+\end{itemize}
+
+\subsubsection{3.3 核心启发（B）：“宽谷偏好”的物理解释}
+从 Lyapunov 方程可直接推导“曲率”与“平稳方差”的关系：对 Hessian 矩阵 $H$ 的某个特征值 $\lambda_i$（对应第 $i$ 个参数方向的曲率），其对应的平稳方差 $P_{ii}$（参数在该方向的波动范围）满足：
+\begin{equation}
+P_{ii} = \frac{T}{\lambda_i}
+\end{equation}
+这意味着：在相同噪声强度（温度 $T$）下，\textbf{曲率越小（$\lambda_i$ 越小）的参数方向，平稳方差越大}——即目标函数的“宽谷区域”（曲率小）对参数的“吸引概率”更高，参数更易在宽谷中稳定下来。
+
+这一结论完美解释了深度学习中的经验观察：“更平坦的极小值泛化性能更好”——因为 SGD 的噪声会使参数自然偏向宽谷区域，而宽谷区域的参数对数据扰动更不敏感，泛化能力更强。
+
+\subsection{学习率、批量与“温度”的定量关系}
+通过动力学分析，可建立 SGD 中“学习率（$\eta$）”“批量大小（$B$）”与“温度（$T$，噪声强度）”的明确关联，为超参数调整提供理论依据。
+
+\subsubsection{4.1 小批量梯度的方差尺度}
+设数据集总大小为 $N$，小批量大小为 $B$，在“样本独立同分布（IID）”的近似下，小批量梯度的协方差满足：
+\begin{equation}
+\text{Cov}\left[ \nabla L_{\mathcal{B}}(\theta) \right] \approx \left( \frac{1}{B} - \frac{1}{N} \right) C(\theta)
+\end{equation}
+其中 $C(\theta)$ 是单个样本梯度的协方差（与参数 $\theta$ 相关，代表数据本身的梯度波动）。
+当 $B \ll N$（小批量远小于总数据量）时，$\frac{1}{N}$ 可忽略，协方差近似为 $\frac{1}{B} C(\theta)$——即批量越大，随机梯度的噪声越小（方差与批量大小成反比）。
+
+\subsubsection{4.2 有效温度与“噪声刻度”}
+结合 SDE 的扩散系数定义（$D \approx \eta \cdot \text{Cov}[\nabla L_{\mathcal{B}}(\theta)]$）和 OU 过程的平稳协方差（$P \propto \frac{T}{\lambda}$），可推导出“有效温度” $T$ 与学习率 $\eta$、批量大小 $B$ 的关系：
+\begin{equation}
+T \propto \eta \cdot \left( \frac{1}{B} - \frac{1}{N} \right)
+\end{equation}
+（比例系数由问题本身的尺度决定，如 $C(\theta)$ 的大小）。
+
+这一关系揭示了“保持温度不变（噪声强度不变）”的两种等效策略：
+\begin{enumerate}
+    \item 减小学习率 $\eta$（降温）：若批量 $B$ 不变，减小 $\eta$ 会降低有效温度，使参数更稳定收敛；
+    \item 增大批量 $B$（降温）：若学习率 $\eta$ 不变，增大 $B$ 会减小 $\frac{1}{B}$，同样降低有效温度，且增大批量更利于并行计算（比减小学习率更高效）。
+\end{enumerate}
+
+\textbf{核心启发（C）：等效退火策略}
+训练后期需要“降低噪声，精准收敛”，可采用“逐步增大批量”的“等效退火”策略——相比传统的“学习率衰减”，增大批量能在不降低更新速度的前提下减小噪声，同时利用并行计算提升训练效率，是更优的超参数调整方案。
+
+\subsection{训练策略：将动力学结论落地到实践}
+基于上述动力学分析，可总结出5条切实可行的 SGD 训练策略，直接指导实际调参与优化：
+
+\begin{enumerate}
+    \item \textbf{两阶段训练日程}：
+    \begin{itemize}
+        \item \textbf{探索阶段（前期）}：采用“小批量+稍大学习率”——对应扩散极限，保持较高的有效温度（噪声强度），让参数通过随机探索跳出局部极小值，找到更优的参数区域；
+        \item \textbf{精调阶段（后期）}：采用“逐步增大批量或衰减学习率”——对应消噪极限，降低有效温度，使参数在优质区域内精准收敛到极小值点。
+    \end{itemize}
+    \item \textbf{学习率的经验上界}：若目标函数满足 L-平滑条件，优先保证学习率 $\eta < \frac{2}{L}$（避免 GD 的显式欧拉积分不稳定）；若在极小值附近（局部二次区域），可通过 Hessian 矩阵的最大特征值 $\lambda_{\text{max}}$ 估算学习率上界（$\eta < \frac{2}{\lambda_{\text{max}}}$），进一步提升稳定性。
+    \item \textbf{常步长+迭代平均}：常步长 SGD 在局部二次近似下易形成稳定的平稳分布（OU 过程的平稳态），但参数会因噪声存在波动；对参数序列做“迭代平均”（如 Polyak–Ruppert 平均），可显著降低噪声导致的抖动，同时保留平稳分布的“宽谷偏好”，提升收敛精度与泛化能力。
+    \item \textbf{预条件缓解各向异性}：目标函数的各向异性（不同参数方向曲率差异大）会导致 SGD 在大曲率方向震荡、小曲率方向推进缓慢；通过“预条件”（如对不同参数方向设置不同的有效步长，或使用 Adam 等自适应优化器），可平衡不同方向的曲率与噪声强度，缓解“快慢维”问题，加快整体收敛速度。
+    \item \textbf{早停并非悖论}：虽然朗之万动力学的平稳分布需要“长时间混合”（参数充分探索），但扩散近似表明：SGD 的“先探索后收束”是宏观规律——训练前期参数快速向优质区域移动，后期若继续训练，参数可能因噪声在平稳区域内波动，反而导致泛化性能下降。因此，结合验证集监控的“早停”策略，本质是在“探索充分”与“收敛稳定”之间找最优平衡点，并非与动力学规律矛盾。
+\end{enumerate}
+
+\subsection{动力学近似的失效场景}
+需注意，上述 ODE/SDE 近似并非万能，在以下4种场景中会失效，需结合实际情况调整策略：
+\begin{enumerate}
+    \item \textbf{大步长或强非线性区域}：步长过大时，显式欧拉积分的误差增大，ODE/SDE 的连续近似失真；目标函数强非线性（如激活函数导致的非光滑区域）会破坏局部二次近似，OU 过程的假设不成立；
+    \item \textbf{重尾或异方差噪声}：若小批量梯度的噪声不满足高斯分布（重尾分布），或噪声方差随参数剧烈变化（异方差），扩散近似的偏差会显著增大；
+    \item \textbf{非IID/强自相关采样}：若小批量采样非独立同分布（如时序数据的连续采样），会破坏噪声的无偏性与方差稳定性，噪声项存在“记忆效应”，SDE 的布朗运动假设（无记忆性）失效；
+    \item \textbf{强各向异性}：若目标函数的曲率与噪声强度在不同方向差异极大（强各向异性），单一温度参数无法刻画噪声的方向性，需更精细的“随机平均场（SME）”或“Fokker–Planck 方程”分析，或通过预条件技术针对性优化。
+\end{enumerate}
+
+\subsection{核心关系总结}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{离散算法} & \textbf{连续动力学模型} & \textbf{核心方程} & \textbf{关键参数/概念} \\ \midrule
+梯度下降(GD) & 梯度流(ODE) & $\dot{\theta}(t) = -\nabla L(\theta(t))$ & 学习率 $\eta$(时间步长), L-平滑常数 $L$ \\
+随机梯度下降(SGD) & 朗之万动力学(SDE) & $d\theta_t = -\nabla L dt + \sqrt{2T}dW_t$ & 有效温度 $T$(噪声强度), 批量 $B$, 扩散系数 $D$ \\
+极小值附近SGD & OU过程 & $d\vartheta_t = -H\vartheta_t dt + \sqrt{2T}dW_t$ & Hessian $H$(曲率), 平稳协方差 $P$, Lyapunov方程 \\ \bottomrule
+\end{tabular}
+\caption{离散算法与连续动力学模型的对应关系}
+\end{table}
+
+\begin{remark}[一些简单的总结]
+\textbf{1. GD $\to$ ODE}
+离散更新：$\theta_{k+1} = \theta_k - \eta \nabla L(\theta_k)$ 是连续方程 $\dot{\theta}(t) = -\nabla L(\theta(t))$ 的显式欧拉近似。学习率 $\eta$ 对应时间步长。$\eta$ 过大会导致数值不稳定。稳定区间与 Hessian 最大特征值 $\lambda_{\max}$ 相关：$0<\eta<2/\lambda_{\max}(H)$。
+
+\textbf{2. SGD $\to$ SDE}
+随机梯度 $\nabla L_B = \nabla L + \xi$ 在 $\eta \to 0$ 时可连续化为 $d\theta_t = -\nabla L(\theta_t) dt + G(\theta_t) dW_t$，即朗之万动力学。噪声强度矩阵 $G G^\top \approx \eta \Sigma$。
+
+\textbf{3. 两类极限}
+\begin{itemize}
+    \item \textbf{消噪极限（$\eta \to 0$, $B$ 大）}：SDE $\to$ ODE，收敛。
+    \item \textbf{扩散极限（$\eta, B$ 按比例缩放）}：保持噪声强度，探索。
+\end{itemize}
+
+\textbf{4. Fokker–Planck 方程}
+描述参数分布演化，平衡确定性漂移与随机扩散。噪声方向性解释了“平坦极小值泛化更好”。
+
+\textbf{5. 局部二次近似 $\to$ OU 过程}
+在极小值附近：$d\vartheta_t = -H\vartheta_t dt + \sqrt{2T} dW_t$。平稳协方差 $P$ 满足 $HP + PH = 2T I$。各方向方差 $P_{ii} = T/\lambda_i$，曲率越小波动越大 $\to$ SGD 自然偏向宽谷。
+
+\textbf{6. 温度刻度}
+小批量方差 $\propto 1/B$。有效温度 $T \propto \eta \left( \frac{1}{B} - \frac{1}{N} \right)$。增大 $B$ 或减小 $\eta$ 均可“降温”，即退火。
+
+\textbf{7. 实践策略}
+\begin{itemize}
+    \item \textbf{前期}：小批量 + 大学习率（高温扩散探索）。
+    \item \textbf{后期}：增大批量或衰减学习率（降温收敛）。
+    \item \textbf{常步长 + 迭代平均} 降低噪声。
+    \item \textbf{预条件处理} 各向异性。
+    \item \textbf{早停} 平衡探索与收敛。
+\end{itemize}
+
+\textbf{8. 失效条件}
+步长过大、非高斯噪声、非 IID 采样、强各向异性。此时需改用随机平均场或 Fokker–Planck 分析。
+
+\textbf{核心洞见}：\textbf{SGD 是朗之万扩散在能量地形 $L(\theta)$ 上的近似积分}。学习率控制时间步，批量控制温度。广义目标是利用噪声探索宽谷、再逐步降温精调。
+\end{remark}
+
+\section{SGD之问：为什么需要动量？}
+
+\subsection{从SGD出发：我们到底缺什么？}
+SGD 的核心更新公式为：
+\begin{equation}
+\theta^{(k+1)}=\theta^{(k)}-\eta g^{(k)}, \quad g^{(k)} \equiv \nabla_{\theta} L\left(x^{(k)}, \theta^{(k)}\right)
+\end{equation}
+其中 $\theta^{(k)}$ 是第 $k$ 步参数，$\eta$ 是学习率，$g^{(k)}$ 是基于小批量数据计算的随机梯度。
+
+在实际训练中，纯 SGD 会暴露三个典型“痛点”，这正是动量（如 Heavy-Ball、NAG）要解决的核心问题：
+\begin{enumerate}
+    \item \textbf{痛点1：收敛慢}
+    在 L-平滑凸目标函数上，纯 SGD 即使用最优常数步长，函数值收敛速率也只能达到 $O(1/k)$；若目标函数是强凸的，收敛速率还会受“条件数 $\kappa=L/\mu$”（$L$ 为平滑常数，$\mu$ 为强凸系数）控制——条件数越大（如高维模型），收敛越慢，甚至出现“硬问题”（迭代数千步仍无明显下降）。
+    \item \textbf{痛点2：“峡谷之字形”震荡}
+    当目标函数存在“各向异性曲率”（Hessian 矩阵特征值跨度大，即“峡谷地形”）时，纯 SGD 会在峡谷两侧来回震荡：大曲率方向（峡谷壁）的梯度大，迫使步长被“钳制”得很小；而小曲率方向（峡谷底）的梯度小，小步长导致推进缓慢，整体呈现“之字形”路径，严重浪费迭代次数。
+    \item \textbf{痛点3：噪声底难以突破}
+    小批量数据带来的梯度噪声，会使纯 SGD 在训练后期陷入“噪声主导”状态——参数围绕极小值点反复波动，无法继续降低函数值，形成“噪声底”，难以收敛到更优解。
+\end{enumerate}
+
+\subsection{Heavy-Ball（HB）：用“惯性”优化SGD的核心痛点}
+Heavy-Ball 是最经典的动量方法，核心是给 SGD 加入“惯性记忆”，通过累积历史更新方向，实现“抑制震荡、加快收敛、抵抗噪声”的效果。
+
+\subsubsection{两种等价实现形式}
+\begin{itemize}
+    \item \textbf{位移形式（经典 Polyak 公式）}：直接通过历史参数差引入惯性
+    \begin{equation}
+    \theta^{(k+1)}=\theta^{(k)}-\eta g^{(k)}+\beta\left(\theta^{(k)}-\theta^{(k-1)}\right)
+    \end{equation}
+    其中 $\beta \in [0,1)$ 是动量系数，$\theta^{(k)}-\theta^{(k-1)}$ 是上一步的参数更新量（历史方向），$\beta$ 越大，惯性越强。
+    \item \textbf{速度-EMA形式（深度学习常用）}：通过“指数移动平均（EMA）”维护一个“速度”变量，间接引入惯性
+    \begin{equation}
+    v^{(k+1)}=\beta v^{(k)}+(1-\beta) g^{(k)}, \quad \theta^{(k+1)}=\theta^{(k)}-\eta v^{(k+1)}
+    \end{equation}
+    其中 $v^{(k)}$ 是速度变量（可理解为“加权平均后的梯度”），$(1-\beta)$ 是当前梯度的权重，$\beta$ 是历史速度的权重——本质是对梯度做平滑，降低噪声影响。
+\end{itemize}
+
+\subsubsection{Heavy-Ball为什么有效？（基于一维/特征方向的直觉）}
+以“二次目标函数”（最易理解的凸函数）为例，设 $L(\theta)=\frac{1}{2}\lambda(\theta-\theta^*)^2$（$\theta^*$ 是最优解，$\lambda$ 是曲率），此时 HB 的误差（$e^{(k)}=\theta^{(k)}-\theta^*$）满足二阶递推关系：
+\begin{equation}
+e^{(k+1)}=(1-\eta \lambda+\beta) e^{(k)}-\beta e^{(k-1)}
+\end{equation}
+通过选择合适的 $(\eta, \beta)$（如 $\beta=\frac{\sqrt{\kappa}-1}{\sqrt{\kappa}+1}$，$\kappa=L/\mu$ 为条件数），可实现三大优化：
+\begin{itemize}
+    \item \textbf{加速收敛}：将强凸二次函数上的收敛复杂度从纯 SGD 的 $O(\kappa \log \frac{1}{\varepsilon})$（$\varepsilon$ 为精度要求）降低到 $O(\sqrt{\kappa} \log \frac{1}{\varepsilon})$——条件数越大，加速效果越明显；
+    \item \textbf{抑制“之字形”震荡}：动量对“高频反向梯度”（如峡谷壁的来回震荡方向）提供阻尼（历史方向与当前方向相反时，惯性会抵消部分更新），对“低频一致梯度”（如峡谷底的前进方向）做累积放大，使参数沿谷底顺滑推进；
+    \item \textbf{抵抗噪声}：EMA 形式的速度变量会将梯度噪声的方差按系数 $\frac{1-\beta}{1+\beta}$ 压低——例如 $\beta=0.9$ 时，噪声方差仅为纯 SGD 的约 5\%，轨迹更平滑，后期更易突破噪声底。
+\end{itemize}
+
+\subsubsection{局限性}
+HB 在“二次函数”或“局部强凸目标”上效果显著，但对“一般凸目标”（无强凸性）的全局加速速率，缺乏像 NAG 那样的普适理论保证——在非强凸场景下，HB 的加速效果可能不稳定。
+
+\subsection{Nesterov（NAG）：“前瞻-校正”实现更稳健的加速}
+Nesterov 动量（简称 NAG）是对 HB 的改进，核心是加入“前瞻步骤”：先根据历史惯性“预判”下一步的参数位置，再用该位置的梯度做校正，避免 HB 可能出现的“过冲”问题，实现更稳健的全局加速。
+
+\subsubsection{3.1 两种常见实现形式}
+\begin{itemize}
+    \item \textbf{原始 Nesterov 加速梯度（FISTA/FGM 形态）}：先计算前瞻点，再用前瞻点的梯度更新
+    \begin{equation}
+    y^{(k)}=\theta^{(k)}+\beta\left(\theta^{(k)}-\theta^{(k-1)}\right), \quad \theta^{(k+1)}=y^{(k)}-\eta \nabla L\left(y^{(k)}\right)
+    \end{equation}
+    其中 $y^{(k)}$ 是“前瞻点”（基于历史惯性预判的下一步参数），$\nabla L(y^{(k)})$ 是前瞻点的梯度——相比 HB 直接用当前点梯度，NAG 用前瞻点梯度能更精准地捕捉“下一步的真实坡度”。
+    \item \textbf{深度学习 NAG（look-ahead 梯度形态）}：结合速度变量的前瞻更新
+    \begin{equation}
+    v^{(k+1)}=\beta v^{(k)}+g\left(\theta^{(k)}-\eta \beta v^{(k)}\right), \quad \theta^{(k+1)}=\theta^{(k)}-\eta v^{(k+1)}
+    \end{equation}
+    其中 $\theta^{(k)}-\eta \beta v^{(k)}$ 是前瞻点（用历史速度预判的位置），$g(\cdot)$ 是前瞻点的梯度——本质与原始形态一致，只是用速度变量简化了计算。
+\end{itemize}
+
+\subsubsection{Nesterov为什么更优？（核心是“前瞻-校正”）}
+\begin{itemize}
+    \item \textbf{凸问题的全局加速保证}：在 L-平滑凸目标函数上，NAG 能通过“前瞻-校正”实现 $O(1/k^2)$ 的函数值收敛速率（纯 SGD 是 $O(1/k)$）；在强凸目标上，能达到与 HB 相同的线性收敛率（最坏收敛因子 $\propto 1-\frac{1}{\sqrt{\kappa}}$），但全局理论保证更普适。
+    \item \textbf{减少“过冲”与误判}：在强各向异性的“峡谷地形”中，HB 的惯性可能导致参数“冲过”谷底（因用当前点梯度判断方向，未考虑下一步的坡度变化）；而 NAG 的前瞻点梯度更贴近“下一步真正会到的位置”的曲率，能提前校正惯性方向，减少反复横跳，稳定性更强。
+\end{itemize}
+
+\subsection{HB与NAG的噪声鲁棒性对比}
+在相同步幅（有效更新量）下，HB 和 NAG 都能抵抗梯度噪声，但机制与适用场景略有差异：
+\begin{itemize}
+    \item \textbf{HB 的优势}：EMA 形式的速度平滑对“低噪声、强曲率”场景更友好——例如小批量较大（噪声小）的强凸任务，HB 的惯性能快速累积前进方向，且实现简单、调参成本低；
+    \item \textbf{NAG 的优势}：前瞻-校正对“高噪声、强非线性”场景更稳健——例如小批量较小（噪声大）的深度学习任务，NAG 能减少“陈旧梯度”（当前点梯度与下一步实际梯度的偏差）导致的误判，在弯曲剧烈的噪声场中轨迹更稳定。
+\end{itemize}
+两者的共同局限是：若训练后期不“降温”（减学习率或增批量），都会因噪声存在“噪声底”——因此需配合“迭代平均”或“等效退火”策略，进一步提升收敛精度。
+
+\subsection{实践选择：何时用HB，何时用NAG？}
+基于目标函数特性与工程需求，可按以下原则选择：
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{场景特征} & \textbf{优先选择} & \textbf{理由} \\ \midrule
+有理论保证需求(凸/强凸任务) & NAG & 能提供 $O(1/k^2)$ 或线性收敛的全局理论保证，结果更可控 \\
+明显“峡谷地形”、过冲严重 & NAG & 前瞻-校正能减少惯性过冲，抑制横跳 \\
+调参简洁、兼容现有SGD流程 & HB & EMA形式易集成到现有代码，仅需新增一个动量系数 $\beta$，调参成本低 \\
+大批量、低噪声、强凸任务 & HB & 噪声小，无需复杂的前瞻校正，HB的惯性加速更直接 \\
+极大条件数、低噪声(确定性任务) & 两者均可 & 都能实现 $\sqrt{\kappa}$ 级加速，NAG理论保证更优，HB实现更简单 \\ \bottomrule
+\end{tabular}
+\caption{HB与NAG的选择指南}
+\end{table}
+
+\subsection{核心总结}
+动量的本质是给 SGD 加入“历史方向记忆”，解决纯 SGD“慢、晃、抖”的痛点：
+\begin{itemize}
+    \item HB 通过“惯性累积”实现加速与震荡抑制，适合简单场景与低噪声任务；
+    \item NAG 通过“前瞻-校正”实现更稳健的全局加速，适合复杂场景与高噪声任务；
+    \item 无论选择哪种动量，训练后期都需配合“降温”（减学习率/增批量）或“迭代平均”，才能突破噪声底，实现精准收敛。
+\end{itemize}

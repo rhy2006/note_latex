@@ -1,0 +1,604 @@
+\chapter{从等式约束到不等式约束：对偶}
+
+\section{从KKT条件到对偶问题的严格数学建模}
+
+\subsection{原始问题（Primal Problem）建模}
+
+\subsubsection{定义（原始约束优化问题）}
+给定变量空间 $\mathbb{R}^n$，目标函数与约束函数满足：
+\begin{itemize}
+    \item 目标函数：$f: \mathbb{R}^n \to \mathbb{R}$（从n维欧氏空间到实数域的映射）
+    \item 等式约束函数：$g_i: \mathbb{R}^n \to \mathbb{R}$（$i=1,2,\dots,m$），共$m$个等式约束
+    \item 不等式约束函数：$h_j: \mathbb{R}^n \to \mathbb{R}$（$j=1,2,\dots,p$），共$p$个不等式约束
+\end{itemize}
+
+原始问题的数学表达式为：
+\[
+\begin{cases}
+\min\limits_{x \in \mathbb{R}^n} & f(x) \\
+\text{subject to} & g_i(x) = 0, \quad i=1,2,\dots,m \\
+& h_j(x) \leq 0, \quad j=1,2,\dots,p
+\end{cases}
+\]
+其中，$x = (x_1,x_2,\dots,x_n)^T$ 为原始问题的优化变量，原始问题的最优值记为 $p^* = \inf\{f(x) \mid x \text{ 满足所有约束}\}$。
+
+
+\subsection{拉格朗日函数建模}
+
+\subsubsection{定义（拉格朗日函数）}
+引入拉格朗日乘子：
+\begin{itemize}
+    \item 等式约束乘子：$\lambda = (\lambda_1,\lambda_2,\dots,\lambda_m)^T \in \mathbb{R}^m$（无符号限制）
+    \item 不等式约束乘子：$\mu = (\mu_1,\mu_2,\dots,\mu_p)^T \in \mathbb{R}^p$（后续将限定非负）
+\end{itemize}
+
+拉格朗日函数定义为：
+\[
+\mathcal{L}(x, \lambda, \mu) = f(x) + \sum_{i=1}^m \lambda_i g_i(x) + \sum_{j=1}^p \mu_j h_j(x)
+\]
+其中，$\mathcal{L}: \mathbb{R}^n \times \mathbb{R}^m \times \mathbb{R}^p \to \mathbb{R}$（从$n+m+p$维乘积空间到实数域的映射）。
+
+
+\subsection{拉格朗日对偶函数建模}
+
+\begin{definition}[拉格朗日对偶函数]
+拉格朗日对偶函数是拉格朗日函数关于原始变量$x$的\textbf{逐点下确界}，定义为：
+\[
+d(\lambda, \mu) = \inf_{x \in \mathbb{R}^n} \mathcal{L}(x, \lambda, \mu)
+\]
+其中，$d: \mathbb{R}^m \times \mathbb{R}^p \to \mathbb{R} \cup \{-\infty\}$（对偶函数的值域可包含负无穷，当下确界不存在时取$-\infty$）。
+\end{definition}
+
+
+\subsection{对偶函数的核心性质建模}
+
+\begin{theorem}[对偶函数的凹性]
+对偶函数 $d(\lambda, \mu)$ 是关于 $(\lambda, \mu)$ 的凹函数。
+\end{theorem}
+
+\begin{proof}
+\begin{enumerate}
+    \item 对任意固定的 $x \in \mathbb{R}^n$，构造函数 $\phi_{x}(\lambda, \mu) = \mathcal{L}(x, \lambda, \mu)$。由拉格朗日函数的定义可知：
+    \[
+    \phi_{x}(\lambda, \mu) = f(x) + \sum_{i=1}^m \lambda_i g_i(x) + \sum_{j=1}^p \mu_j h_j(x)
+    \]
+    其中 $f(x), g_i(x), h_j(x)$ 均与 $(\lambda, \mu)$ 无关，因此 $\phi_{x}(\lambda, \mu)$ 是关于 $(\lambda, \mu)$ 的\textbf{仿射函数}（线性函数加常数项）。
+    
+    \item 对偶函数 $d(\lambda, \mu) = \inf_{x \in \mathbb{R}^n} \phi_{x}(\lambda, \mu)$，即对偶函数是一族仿射函数 $\{\phi_{x}(\lambda, \mu) \mid x \in \mathbb{R}^n\}$ 的逐点下确界。
+    
+    \item 由凸分析基本性质：\textbf{一族仿射函数的逐点下确界是凹函数}，因此 $d(\lambda, \mu)$ 是凹函数。
+\end{enumerate}
+\end{proof}
+
+\begin{theorem}[对偶函数的下界性质]
+对任意 $\lambda \in \mathbb{R}^m$ 和 $\mu \geq 0$（即 $\mu_j \geq 0$ 对所有 $j=1,2,\dots,p$ 成立），有：
+\[
+d(\lambda, \mu) \leq p^*
+\]
+其中 $p^*$ 是原始问题的最优值。
+\end{theorem}
+
+\begin{proof}
+\begin{enumerate}
+    \item 设 $x$ 是原始问题的任意可行点，即满足：
+    \[
+    g_i(x) = 0 \quad (i=1,\dots,m), \quad h_j(x) \leq 0 \quad (j=1,\dots,p)
+    \]
+    
+    \item 由于 $\mu \geq 0$ 且 $h_j(x) \leq 0$，可得：
+    \[
+    \sum_{j=1}^p \mu_j h_j(x) \leq 0
+    \]
+    又因为 $g_i(x) = 0$，故：
+    \[
+    \sum_{i=1}^m \lambda_i g_i(x) + \sum_{j=1}^p \mu_j h_j(x) = 0 + \sum_{j=1}^p \mu_j h_j(x) \leq 0
+    \]
+    
+    \item 代入拉格朗日函数得：
+    \[
+    \mathcal{L}(x, \lambda, \mu) = f(x) + \sum_{i=1}^m \lambda_i g_i(x) + \sum_{j=1}^p \mu_j h_j(x) \leq f(x)
+    \]
+    
+    \item 由对偶函数的定义（下确界性质），对任意 $x \in \mathbb{R}^n$ 有：
+    \[
+    d(\lambda, \mu) = \inf_{y \in \mathbb{R}^n} \mathcal{L}(y, \lambda, \mu) \leq \mathcal{L}(x, \lambda, \mu)
+    \]
+    
+    \item 结合步骤3和步骤4，得：
+    \[
+    d(\lambda, \mu) \leq \mathcal{L}(x, \lambda, \mu) \leq f(x)
+    \]
+    
+    \item 由于该不等式对所有原始可行点 $x$ 成立，而 \textbf{$p^*$ 是所有可行点对应的 $f(x)$ 的下确界}，因此：
+    \[
+    d(\lambda, \mu) \leq p^*
+    \]
+\end{enumerate}
+\end{proof}
+
+
+\subsection{拉格朗日对偶问题建模}
+
+\subsubsection{定义（对偶问题）}
+基于对偶函数的下界性质，对偶问题的目标是\textbf{最大化对偶函数的下界}，同时满足乘子约束 $\mu \geq 0$。其数学表达式为：
+\[
+\begin{cases}
+\max\limits_{\lambda \in \mathbb{R}^m, \mu \in \mathbb{R}^p} & d(\lambda, \mu) \\
+\text{subject to} & \mu_j \geq 0, \quad j=1,2,\dots,p
+\end{cases}
+\]
+
+\subsubsection{关键定义补充}
+\begin{enumerate}
+    \item 对偶问题的最优值：$d^* = \sup\{d(\lambda, \mu) \mid \mu \geq 0\}$（上确界，因对偶函数是凹函数，最大值若存在则上确界等于最大值）。
+    \item 对偶间隙：原始问题最优值与对偶问题最优值的差值，即 $\Delta = p^* - d^*$。
+    \item 弱对偶性：由定理4.2直接可得 $d^* \leq p^*$，即对偶间隙非负（$\Delta \geq 0$），该性质对所有原始-对偶问题对恒成立。
+\end{enumerate}
+
+
+\section{强对偶}
+
+当对偶间隙消失（即原始问题与对偶问题的最优值相等）时，称\textbf{强对偶成立}，这是对偶理论中"原始-对偶等价"的关键条件。
+
+\begin{definition}[强对偶]
+若对偶间隙$\Delta = 0$，即：
+\[
+p^* = d^*
+\]
+则称原始问题与对偶问题满足强对偶性。
+\end{definition}
+
+需特别说明：强对偶并非对所有约束优化问题恒成立，仅在满足特定条件（如Slater条件）时可被保证。
+
+
+\subsection{Slater条件}
+
+\begin{theorem}[Slater条件]
+若原始问题是凸问题，且存在\textbf{严格可行点}$x_{\text{strict}} \in \mathbb{R}^n$，满足：
+\[
+\begin{cases}
+g_i(x_{\text{strict}}) = 0, & i=1,\dots,m \quad (\text{等式约束仍严格满足}) \\
+h_j(x_{\text{strict}}) < 0, & j=1,\dots,p \quad (\text{不等式约束严格满足，无"紧约束"})
+\end{cases}
+\]
+则原始问题与对偶问题满足强对偶性（$p^* = d^*$）。
+\end{theorem}
+
+\begin{remark}
+Slater条件是强对偶成立的\textbf{充分条件，而非必要条件}——即满足Slater条件一定有强对偶，但强对偶成立时未必满足Slater条件。
+\end{remark}
+
+
+\subsection{几何解释}
+
+构造三维乘积空间$\mathbb{R}^m \times \mathbb{R}^p \times \mathbb{R}$中的集合$\mathcal{G}$，其元素为满足"约束与目标函数不等式"的三元组$(u, v, t)$，数学定义为：
+\[
+\mathcal{G} = \left\{ (u, v, t) \in \mathbb{R}^m \times \mathbb{R}^p \times \mathbb{R} \mid \exists x \in \mathbb{R}^n, \ g_i(x)=u_i\ (i=1,\dots,m),\ h_j(x)\leq v_j\ (j=1,\dots,p),\ f(x)\leq t \right\}
+\]
+其中：
+\begin{itemize}
+    \item $u = (u_1,\dots,u_m)^T$（等式约束$g_i(x)$的取值）；
+    \item $v = (v_1,\dots,v_p)^T$（不等式约束$h_j(x)$的上界）；
+    \item $t$（目标函数$f(x)$的上界）。
+\end{itemize}
+
+原始问题的最优值$p^*$是"使$(0,0,t) \in \mathcal{G}$的最小$t$"——即当等式约束取$u=0$、不等式约束取$v=0$（满足原始约束）时，目标函数上界$t$的下确界，数学表达式为：
+\[
+p^* = \inf \left\{ t \mid (0, 0, t) \in \mathcal{G} \right\}
+\]
+几何意义：$\mathcal{G}$中所有"第一分量为0、第二分量为0"的点，其第三分量的最小值即为$p^*$。
+
+对偶问题的最优值$d^*$是"对$\mu \geq 0$，在$\mathcal{G}$上最小化$t+\lambda^T u + \mu^T v$的最大值"，数学表达式为：
+\[
+d^* = \sup_{\mu \geq 0} \inf_{(u, v, t) \in \mathcal{G}} \left\{ t + \lambda^T u + \mu^T v \right\}
+\]
+其中，内层下确界对应对偶函数$d(\lambda,\mu) = \inf_{(u,v,t)\in\mathcal{G}} \{t+\lambda^T u + \mu^T v\}$，外层上界对应对偶问题的最大化目标。
+
+强对偶成立（$p^* = d^*$）的几何意义是：原始最优值的"下确界"与对偶最优值的"上确界-下确界"相等，即$\mathcal{G}$的极值特性满足"对偶无间隙"。
+
+
+\subsection{强对偶定理证明}
+
+\begin{theorem}[强对偶定理]
+若原始问题是凸问题（$f$、$h_j$凸，$g_i$仿射），且满足Slater条件（存在严格可行点$x_{\text{strict}}$），则强对偶成立，即$p^* = d^*$。
+\end{theorem}
+
+\begin{proof}
+定义集合$A = \mathcal{G}$（即前述几何建模中的凸集，因原始问题是凸问题，$A$是凸集）；定义集合$B = \left\{ (0, 0, s) \in \mathbb{R}^m \times \mathbb{R}^p \times \mathbb{R} \mid s < p^* \right\}$（所有"前两分量为0、第三分量小于$p^*$"的点，$B$是凸集）。
+
+\paragraph{关键引理：}$A$与$B$不相交。
+
+若存在$(0,0,s) \in A \cap B$，则$s < p^*$且$(0,0,s) \in \mathcal{G}$——由$\mathcal{G}$的定义，存在$x$满足$g_i(x)=0$、$h_j(x)\leq0$、$f(x)\leq s < p^*$，这与$p^*$是原始问题最优值（最小$f(x)$）矛盾，故$A \cap B = \emptyset$。
+
+由于$A$、$B$是$\mathbb{R}^{m+p+1}$中的不相交凸集，根据\textbf{凸集分离定理}，存在非零向量$(\tilde{\lambda}, \tilde{\mu}, \nu) \in \mathbb{R}^m \times \mathbb{R}^p \times \mathbb{R}$和实数$\alpha \in \mathbb{R}$，使得对所有$(u, v, t) \in A$、$(0,0,s) \in B$，有：
+\[
+\begin{cases}
+\tilde{\lambda}^T u + \tilde{\mu}^T v + \nu t \geq \alpha \quad (\text{超平面上方包含} \ A) \\
+\tilde{\lambda}^T \cdot 0 + \tilde{\mu}^T \cdot 0 + \nu s \leq \alpha \quad (\text{超平面下方包含} \ B)
+\end{cases}
+\]
+
+\paragraph{第一步：证明$\nu \geq 0$}
+
+假设$\nu < 0$，对任意$(u, v, t) \in A$，当$t \to +\infty$时，$\tilde{\lambda}^T u + \tilde{\mu}^T v + \nu t \to -\infty$，与"$\geq \alpha$"矛盾，故$\nu \geq 0$。
+
+\paragraph{第二步：证明$\nu \neq 0$}
+
+假设$\nu = 0$，则分离不等式变为$\tilde{\lambda}^T u + \tilde{\mu}^T v \geq \alpha$（对所有$(u, v, t) \in A$）。由Slater条件，存在严格可行点$x_{\text{strict}}$，使得$g_i(x_{\text{strict}})=0$、$h_j(x_{\text{strict}})=v_j < 0$，即$(0, v, t) \in A$。代入得$\tilde{\mu}^T v \geq \alpha$。若令$v_j \to -\infty$（通过调整$x$），则$\tilde{\mu}^T v \to -\infty$，与"$\geq \alpha$"矛盾，故$\nu \neq 0$。
+
+由于$\nu > 0$，可对分离向量$(\tilde{\lambda}, \tilde{\mu}, \nu)$进行缩放（不影响分离性质），令$\nu = 1$。此时：
+
+\begin{enumerate}
+    \item 分离不等式变为$\tilde{\lambda}^T u + \tilde{\mu}^T v + t \geq \alpha$（对所有$(u, v, t) \in A$）。对原始问题的任意可行点$x$，取$u_i = g_i(x)=0$、$v_j = h_j(x)\leq0$、$t = f(x)$，代入得：
+    \[\tilde{\lambda}^T \cdot 0 + \tilde{\mu}^T h(x) + f(x) \geq \alpha\]
+    
+    \item 对$B$的不等式（$\nu s \leq \alpha$，$s < p^*$），令$s \to p^*$，得$p^* \leq \alpha$（因$\nu=1$）。
+    
+    \item 结合1和2，得$f(x) + \tilde{\mu}^T h(x) \geq \alpha \geq p^*$。对所有可行$x$取下确界（即对偶函数定义）：
+    \[
+    d(\tilde{\lambda}, \tilde{\mu}) = \inf_x \left\{ f(x) + \tilde{\lambda}^T g(x) + \tilde{\mu}^T h(x) \right\} \geq p^*
+    \]
+    
+    \item 由弱对偶性（$d(\lambda,\mu) \leq p^*$），得$d(\tilde{\lambda}, \tilde{\mu}) = p^*$。
+\end{enumerate}
+
+假设存在$j$使得$\tilde{\mu}_j < 0$，则选择$x$使$h_j(x)$足够大（正值），可令$\tilde{\lambda}^T g(x) + \tilde{\mu}^T h(x) + f(x) \to -\infty$，与"$\geq p^*$"矛盾，故$\tilde{\mu} \geq 0$。
+
+$(\tilde{\lambda}, \tilde{\mu})$是对偶问题的可行解（$\tilde{\mu} \geq 0$），且$d(\tilde{\lambda}, \tilde{\mu}) = p^*$。由对偶最优值$d^* = \sup\{d(\lambda,\mu) \mid \mu \geq 0\}$，得$d^* \geq p^*$；结合弱对偶性$d^* \leq p^*$，故$d^* = p^*$，强对偶成立。
+\end{proof}
+
+
+\section{互补松弛条件}
+
+设原始问题与对偶问题满足：
+\begin{enumerate}
+    \item 原始问题最优解$x^*$存在，对偶问题最优解$(\lambda^*, \mu^*)$存在；
+    \item 强对偶成立（$p^* = d^*$）。
+\end{enumerate}
+
+则必有以下两个等价结论：
+\begin{enumerate}
+    \item \textbf{拉格朗日函数极值等式}：$\mathcal{L}(x^*, \lambda^*, \mu^*) = f(x^*)$；
+    \item \textbf{乘子-约束乘积为零}：对所有不等式约束的下标$j=1,2,\dots,p$，有
+    \[\mu_j^* \cdot h_j(x^*) = 0\]
+\end{enumerate}
+
+（注：结论2是互补松弛条件的"核心量化形式"，也是实际应用中最常用的表述。）
+
+\begin{proof}
+由强对偶成立（$p^* = d^*$），结合原始最优值与对偶函数的定义，可得：
+\[
+f(x^*) = p^* = d^* = d(\lambda^*, \mu^*) \tag{1}
+\]
+
+根据对偶函数的定义（$d(\lambda,\mu) = \inf_{x \in \mathbb{R}^n} \mathcal{L}(x,\lambda,\mu)$），对任意$x \in \mathbb{R}^n$，对偶函数是拉格朗日函数的下确界，因此：
+\[
+d(\lambda^*, \mu^*) \leq \mathcal{L}(x^*, \lambda^*, \mu^*) \tag{2}
+\]
+
+结合式(1)与式(2)，得：
+\[
+f(x^*) \leq \mathcal{L}(x^*, \lambda^*, \mu^*) \tag{3}
+\]
+
+将拉格朗日函数在$(x^*, \lambda^*, \mu^*)$处展开：
+\[
+\mathcal{L}(x^*, \lambda^*, \mu^*) = f(x^*) + \sum_{i=1}^m \lambda_i^* g_i(x^*) + \sum_{j=1}^p \mu_j^* h_j(x^*) \tag{4}
+\]
+
+由\textbf{原始可行性}（$x^*$满足等式约束），对所有$i=1,\dots,m$，有$g_i(x^*) = 0$，因此式(4)中的等式约束乘子项消失：
+\[
+\mathcal{L}(x^*, \lambda^*, \mu^*) = f(x^*) + \sum_{j=1}^p \mu_j^* h_j(x^*) \tag{5}
+\]
+
+由\textbf{对偶可行性}（$\mu^* \geq 0$），对所有$j=1,\dots,p$，有$\mu_j^* \geq 0$；由\textbf{原始可行性}（$x^*$满足不等式约束），对所有$j=1,\dots,p$，有$h_j(x^*) \leq 0$。
+
+因此，对每个$j$，$\mu_j^* \cdot h_j(x^*) \leq 0$（非正数），求和后仍为非正数：
+\[
+\sum_{j=1}^p \mu_j^* h_j(x^*) \leq 0 \tag{6}
+\]
+
+将式(6)代入式(5)，得：
+\[
+\mathcal{L}(x^*, \lambda^*, \mu^*) \leq f(x^*) \tag{7}
+\]
+
+结合式(3)（$f(x^*) \leq \mathcal{L}(x^*, \lambda^*, \mu^*)$）与式(7)（$\mathcal{L}(x^*, \lambda^*, \mu^*) \leq f(x^*)$），所有不等式变为等式：
+\[
+\mathcal{L}(x^*, \lambda^*, \mu^*) = f(x^*) \tag{8}
+\]
+
+将式(8)代入式(5)，得：
+\[
+f(x^*) = f(x^*) + \sum_{j=1}^p \mu_j^* h_j(x^*) \implies \sum_{j=1}^p \mu_j^* h_j(x^*) = 0 \tag{9}
+\]
+
+由步骤3可知，每个$\mu_j^* h_j(x^*) \leq 0$（非正数），而\textbf{非正数的和为零，当且仅当每个非正数均为零}。因此：
+\[
+\mu_j^* h_j(x^*) = 0 \quad \forall j=1,2,\dots,p \tag{10}
+\]
+
+式(8)与式(10)共同构成互补松弛条件。
+\end{proof}
+
+\begin{remark}
+互补松弛条件$\mu_j^* h_j(x^*) = 0$的本质是\textbf{判断不等式约束对最优解的"活性"}，可分为两种互斥情况，直观反映约束是否影响最优解：
+
+\begin{itemize}
+    \item \textbf{情况1}：$\mu_j^* > 0$（对偶乘子为正）。对应约束$h_j(x) \leq 0$是\textbf{紧约束}（起作用的约束）。最优解$x^*$恰好落在约束边界上（$h_j(x^*) = 0$），该约束限制了目标函数的进一步优化。
+    \item \textbf{情况2}：$\mu_j^* = 0$（对偶乘子为零）。对应约束$h_j(x) \leq 0$是\textbf{非紧约束}（不起作用的约束）。最优解$x^*$落在约束内部（$h_j(x^*) < 0$），即使移除该约束，最优解也不会改变。
+\end{itemize}
+
+（注：等式约束$g_i(x) = 0$始终为"紧约束"，无互补松弛判断，因其对偶乘子$\lambda_i^*$无符号限制，无需通过乘积为零判断活性。）
+\end{remark}
+
+互补松弛条件是KKT（Karush-Kuhn-Tucker）最优性条件的重要组成部分。在\textbf{凸问题+强对偶成立+函数可微}的前提下，KKT条件是原始-对偶最优解的充要条件，其结构如下：
+
+\subsection{KKT条件的完整构成（含互补松弛）}
+设原始问题为凸问题（$f$、$h_j$凸，$g_i$仿射），$f$、$g_i$、$h_j$可微，$x^*$为原始最优解，$(\lambda^*, \mu^*)$为对偶最优解，则：
+\begin{enumerate}
+    \item \textbf{平稳性}：$\nabla_x \mathcal{L}(x^*, \lambda^*, \mu^*) = 0$（拉格朗日函数在$x^*$处梯度为零，即无改进方向）；
+    \item \textbf{原始可行性}：$g_i(x^*) = 0\ (i=1,\dots,m)$，$h_j(x^*) \leq 0\ (j=1,\dots,p)$；
+    \item \textbf{对偶可行性}：$\mu_j^* \geq 0\ (j=1,\dots,p)$；
+    \item \textbf{互补松弛}：$\mu_j^* h_j(x^*) = 0\ (j=1,\dots,p)$。
+\end{enumerate}
+
+可见，互补松弛条件是KKT条件的"闭环环节"——它连接了原始约束的可行性（$h_j(x^*) \leq 0$）与对偶乘子的可行性（$\mu_j^* \geq 0$），确保原始-对偶最优解的一致性。
+
+
+\section{对偶理论的应用实例}
+
+\subsection{线性规划的对偶}
+
+考虑线性规划问题（原始问题）：
+\[
+\begin{cases}
+\min\limits_{x} & c^{T} x \\
+\text{subject to} & A x = b \\
+& x \geq 0
+\end{cases}
+\]
+其中，$x \in \mathbb{R}^n$ 为原始优化变量，$c \in \mathbb{R}^n$、$A \in \mathbb{R}^{m \times n}$、$b \in \mathbb{R}^m$ 为已知参数。
+
+引入拉格朗日乘子：
+\begin{itemize}
+    \item 等式约束 $A x = b$ 对应的乘子：$\lambda \in \mathbb{R}^m$（无符号限制）；
+    \item 不等式约束 $x \geq 0$ 对应的乘子：$\mu \in \mathbb{R}^n$（满足 $\mu \geq 0$）。
+\end{itemize}
+
+拉格朗日函数定义为：
+\[
+\mathcal{L}(x, \lambda, \mu) = c^{T} x + \lambda^{T}(b - A x) - \mu^{T} x
+\]
+
+对偶函数 $d(\lambda, \mu)$ 是拉格朗日函数关于 $x$ 的下确界，即：
+\[
+d(\lambda, \mu) = \inf_{x} \left[ c^{T} x + \lambda^{T}(b - A x) - \mu^{T} x \right]
+\]
+将函数整理为关于 $x$ 的线性形式：
+\[
+d(\lambda, \mu) = \inf_{x} \left[ (c - A^{T} \lambda - \mu)^{T} x + \lambda^{T} b \right]
+\]
+
+为使下确界有限（避免取值为 $-\infty$），需满足线性项系数为零：
+\[
+c - A^{T} \lambda - \mu = 0 \implies \mu = c - A^{T} \lambda
+\]
+结合 $\mu \geq 0$ 的约束，可得：
+\[
+A^{T} \lambda \leq c
+\]
+
+将 $\mu = c - A^{T} \lambda$ 代入拉格朗日函数，对偶函数简化为：
+\[
+d(\lambda) = \lambda^{T} b
+\]
+
+对偶问题的目标是最大化对偶函数 $d(\lambda)$，同时满足对偶可行性约束，即：
+\[
+\begin{cases}
+\max\limits_{\lambda} & b^{T} \lambda \\
+\text{subject to} & A^{T} \lambda \leq c
+\end{cases}
+\]
+此为线性规划的标准对偶形式。
+
+
+\subsection{二次规划的对偶}
+
+考虑二次规划问题（原始问题）：
+\[
+\begin{cases}
+\min\limits_{x} & \frac{1}{2} x^{T} Q x + c^{T} x \\
+\text{subject to} & A x = b \\
+& x \geq 0
+\end{cases}
+\]
+其中，$x \in \mathbb{R}^n$ 为原始优化变量，$Q \in \mathbb{R}^{n \times n}$ 为\textbf{半正定矩阵}（$Q \succeq 0$，保证目标函数凸），$c \in \mathbb{R}^n$、$A \in \mathbb{R}^{m \times n}$、$b \in \mathbb{R}^m$ 为已知参数。
+
+引入拉格朗日乘子：
+\begin{itemize}
+    \item 等式约束 $A x = b$ 对应的乘子：$\lambda \in \mathbb{R}^m$（无符号限制）；
+    \item 不等式约束 $x \geq 0$ 对应的乘子：$\mu \in \mathbb{R}^n$（满足 $\mu \geq 0$）。
+\end{itemize}
+
+拉格朗日函数定义为：
+\[
+\mathcal{L}(x, \lambda, \mu) = \frac{1}{2} x^{T} Q x + c^{T} x + \lambda^{T}(b - A x) - \mu^{T} x
+\]
+
+对偶函数 $d(\lambda, \mu)$ 是拉格朗日函数关于 $x$ 的下确界，即：
+\[
+d(\lambda, \mu) = \inf_{x} \left[ \frac{1}{2} x^{T} Q x + \left( c - A^{T} \lambda - \mu \right)^{T} x + \lambda^{T} b \right]
+\]
+
+由于目标函数是关于 $x$ 的二次函数，且 $Q \succeq 0$（凸函数），当 $Q$ \textbf{正定}（$Q \succ 0$）时，函数存在唯一极小值。对 $x$ 求导并令梯度为零，得最优 $x$：
+\[
+\nabla_x \mathcal{L} = Q x + (c - A^{T} \lambda - \mu) = 0 \implies x = -Q^{-1}(c - A^{T} \lambda - \mu)
+\]
+
+将最优 $x$ 代入拉格朗日函数，化简得对偶函数：
+\[
+d(\lambda, \mu) = -\frac{1}{2} \left( c - A^{T} \lambda - \mu \right)^{T} Q^{-1} \left( c - A^{T} \lambda - \mu \right) + \lambda^{T} b
+\]
+
+对偶问题的目标是最大化对偶函数 $d(\lambda, \mu)$，同时满足对偶可行性约束，即：
+\[
+\begin{cases}
+\max\limits_{\lambda, \mu} & -\frac{1}{2} \left( c - A^{T} \lambda - \mu \right)^{T} Q^{-1} \left( c - A^{T} \lambda - \mu \right) + \lambda^{T} b \\
+\text{subject to} & \mu \geq 0
+\end{cases}
+\]
+
+
+\subsection{数值例题（二次规划对偶求解）}
+
+以具体二次规划问题为例，验证对偶理论的应用及强对偶性。
+
+\[
+\begin{cases}
+\min\limits_{x_1, x_2} & \frac{1}{2}(x_1^2 + x_2^2) \\
+\text{subject to} & x_1 + x_2 = 1 \quad (\text{等式约束}) \\
+& x_1 \geq 0, \ x_2 \geq 0 \quad (\text{不等式约束})
+\end{cases}
+\]
+
+\subsubsection{步骤1：构造拉格朗日函数}
+引入乘子：
+\begin{itemize}
+    \item 等式约束 $x_1 + x_2 = 1$ 对应 $\lambda \in \mathbb{R}$；
+    \item 不等式约束 $x_1 \geq 0$、$x_2 \geq 0$ 对应 $\mu_1 \geq 0$、$\mu_2 \geq 0$。
+\end{itemize}
+
+拉格朗日函数：
+\[
+\mathcal{L}(x, \lambda, \mu) = \frac{1}{2}(x_1^2 + x_2^2) + \lambda(1 - x_1 - x_2) - \mu_1 x_1 - \mu_2 x_2
+\]
+
+\subsubsection{步骤2：列写KKT条件}
+\begin{enumerate}
+    \item \textbf{平稳性}：$\nabla_x \mathcal{L} = 0$
+    \[\frac{\partial \mathcal{L}}{\partial x_1} = x_1 - \lambda - \mu_1 = 0\]
+    \[\frac{\partial \mathcal{L}}{\partial x_2} = x_2 - \lambda - \mu_2 = 0\]
+    \item \textbf{原始可行性}：$x_1 + x_2 = 1$，$x_1 \geq 0$，$x_2 \geq 0$；
+    \item \textbf{对偶可行性}：$\mu_1 \geq 0$，$\mu_2 \geq 0$；
+    \item \textbf{互补松弛}：$\mu_1 x_1 = 0$，$\mu_2 x_2 = 0$。
+\end{enumerate}
+
+\subsubsection{步骤3：分析最优解}
+假设 $x_1 > 0$ 且 $x_2 > 0$，由互补松弛条件得 $\mu_1 = \mu_2 = 0$。代入平稳性条件：
+\[x_1 = \lambda, \quad x_2 = \lambda\]
+结合等式约束 $x_1 + x_2 = 1$，得 $\lambda = 0.5$，$x_1 = x_2 = 0.5$。
+
+验证所有约束均满足，因此原始最优解为 $x^* = (0.5, 0.5)$，原始最优值 $p^* = \frac{1}{2}(0.5^2 + 0.5^2) = 0.25$。
+
+\subsubsection{步骤4：对偶问题求解}
+
+对偶函数是拉格朗日函数关于 $x_1, x_2$ 的下确界：
+\[
+d(\lambda, \mu) = \inf_{x_1, x_2} \left[ \frac{1}{2}(x_1^2 + x_2^2) + \lambda(1 - x_1 - x_2) - \mu_1 x_1 - \mu_2 x_2 \right]
+\]
+
+对 $x_1, x_2$ 求导并令梯度为零，得：
+\[x_1 = \lambda + \mu_1, \quad x_2 = \lambda + \mu_2\]
+
+将 $x_1, x_2$ 代入拉格朗日函数，展开化简：
+\begin{align*}
+d(\lambda, \mu) &= \frac{1}{2}\left[ (\lambda + \mu_1)^2 + (\lambda + \mu_2)^2 \right] + \lambda\left(1 - 2\lambda - \mu_1 - \mu_2\right) \\
+&\quad - \mu_1(\lambda + \mu_1) - \mu_2(\lambda + \mu_2) \\
+&= -\lambda^2 - \lambda \mu_1 - \lambda \mu_2 - \frac{1}{2}\mu_1^2 - \frac{1}{2}\mu_2^2 + \lambda
+\end{align*}
+
+对偶问题为：
+\[
+\begin{cases}
+\max\limits_{\lambda, \mu_1, \mu_2} & -\lambda^2 - \lambda \mu_1 - \lambda \mu_2 - \frac{1}{2}\mu_1^2 - \frac{1}{2}\mu_2^2 + \lambda \\
+\text{subject to} & \mu_1 \geq 0, \ \mu_2 \geq 0
+\end{cases}
+\]
+
+由原始最优解的互补松弛条件（$\mu_1 = \mu_2 = 0$），代入对偶函数：
+\[
+d(\lambda, 0, 0) = -\lambda^2 + \lambda
+\]
+
+对 $\lambda$ 求导并令导数为零，得 $\lambda = 0.5$，此时对偶最优值 $d^* = -(0.5)^2 + 0.5 = 0.25$。
+
+原始最优值 $p^* = 0.25$，对偶最优值 $d^* = 0.25$，满足 $p^* = d^*$，强对偶成立。
+
+
+\subsection{SVM中的原问题与对偶问题}
+
+支持向量机（SVM）是对偶理论在机器学习中的典型应用，核心是通过对偶问题简化高维特征空间中的优化求解。
+
+\subsubsection{关键结论（原对偶关系）}
+\begin{itemize}
+    \item 原始问题（Primal）：优化变量为模型参数 $w$（权重向量）、$b$（偏置），目标是最大化几何间隔；
+    \item 对偶问题（Dual）：优化变量为对偶乘子 $\alpha_i$（对应每个样本），目标是最大化对偶函数；
+    \item 等价性：通过KKT条件联结原对偶解，满足 $w = \sum_{i} \alpha_i y_i x_i$、$\sum_{i} \alpha_i y_i = 0$、$0 \leq \alpha_i \leq C$（$C$ 为罚系数）；
+    \item 支持向量特性：仅 $\alpha_i > 0$ 的样本（支持向量）决定 $w$ 与几何间隔 $1/\|w\|$；
+    \item 核化能力：对偶问题仅依赖样本内积 $\langle x_i, x_j \rangle$，可直接替换为核函数 $K(x_i, x_j)$，实现高维空间映射。
+\end{itemize}
+
+\subsubsection{软间隔SVM的原始问题}
+目标：在允许样本"软违约"（用 $\xi_i \geq 0$ 表示违约程度）的前提下，最小化 $\frac{1}{2}\|w\|^2$（等价于最大化几何间隔），同时控制违约惩罚。
+
+\[
+\begin{cases}
+\min\limits_{w, b, \xi} & \frac{1}{2}\|w\|^2 + C \sum_{i=1}^n \xi_i \\
+\text{subject to} & y_i(w^T x_i + b) \geq 1 - \xi_i \quad (i=1, ..., n) \\
+& \xi_i \geq 0 \quad (i=1, ..., n)
+\end{cases}
+\]
+其中，$C > 0$ 为罚系数（平衡间隔大小与违约惩罚），$y_i \in \{+1, -1\}$ 为样本标签，$\xi_i$ 为违约变量。
+
+\subsubsection{拉格朗日函数与KKT条件}
+引入对偶乘子：
+\begin{itemize}
+    \item 约束 $y_i(w^T x_i + b) \geq 1 - \xi_i$ 对应 $\alpha_i \geq 0$；
+    \item 约束 $\xi_i \geq 0$ 对应 $\beta_i \geq 0$。
+\end{itemize}
+
+拉格朗日函数：
+\[
+\mathcal{L}(w, b, \xi, \alpha, \beta) = \frac{1}{2}\|w\|^2 + C \sum_{i=1}^n \xi_i - \sum_{i=1}^n \alpha_i \left[ y_i(w^T x_i + b) - 1 + \xi_i \right] - \sum_{i=1}^n \beta_i \xi_i
+\]
+
+对 $w, b, \xi_i$ 求导并令梯度为零：
+\begin{itemize}
+    \item 对 $w$：$\nabla_w \mathcal{L} = w - \sum_{i=1}^n \alpha_i y_i x_i = 0 \implies w = \sum_{i=1}^n \alpha_i y_i x_i$；
+    \item 对 $b$：$\nabla_b \mathcal{L} = -\sum_{i=1}^n \alpha_i y_i = 0 \implies \sum_{i=1}^n \alpha_i y_i = 0$；
+    \item 对 $\xi_i$：$\nabla_{\xi_i} \mathcal{L} = C - \alpha_i - \beta_i = 0 \implies \alpha_i + \beta_i = C$。
+\end{itemize}
+
+结合对偶可行性 $\alpha_i \geq 0$、$\beta_i \geq 0$，得 $0 \leq \alpha_i \leq C$。
+
+\subsubsection{软间隔SVM的对偶问题}
+消去原始变量 $w, b, \xi_i$，代入拉格朗日函数，最终对偶问题为：
+\[
+\begin{cases}
+\max\limits_{\alpha} & \sum_{i=1}^n \alpha_i - \frac{1}{2} \sum_{i=1}^n \sum_{j=1}^n \alpha_i \alpha_j y_i y_j \langle x_i, x_j \rangle \\
+\text{subject to} & 0 \leq \alpha_i \leq C \quad (i=1, ..., n) \\
+& \sum_{i=1}^n \alpha_i y_i = 0
+\end{cases}
+\]
+
+\paragraph{核技巧应用}
+将内积 $\langle x_i, x_j \rangle$ 替换为核函数 $K(x_i, x_j)$（如线性核 $K(x_i, x_j) = x_i^T x_j$、RBF核 $K(x_i, x_j) = \exp(-\gamma\|x_i - x_j\|^2)$），即可得到核SVM的对偶形式，解决高维特征空间的优化问题。
+
+\subsubsection{原对偶的意义与决策函数}
+
+\paragraph{原对偶的核心价值}
+\begin{itemize}
+    \item \textbf{维度优势}：当特征维度 $d$ 极大（如文本分类）、样本数 $n$ 较小时，对偶问题（变量数为 $n$）比原始问题（变量数为 $d+1$）更易求解；
+    \item \textbf{可解释性}：$\alpha_i$ 可视为"样本重要性权重"（支持向量的 $\alpha_i > 0$，非支持向量的 $\alpha_i = 0$）；
+    \item \textbf{最优性判据}：原始问题值 $P(w, b, \xi)$ 与对偶问题值 $D(\alpha)$ 的对偶间隙 $P - D \geq 0$，可作为算法收敛的停机准则。
+\end{itemize}
+
+\paragraph{决策函数与偏置计算}
+\begin{itemize}
+    \item 决策函数：已知对偶最优解 $\alpha^*$，结合核函数 $K$，模型对新样本 $x$ 的预测为：
+    \[f(x) = \text{sign}\left( \sum_{i=1}^n \alpha_i^* y_i K(x_i, x) + b^* \right)\]
+    \item 偏置 $b^*$：取任意满足 $0 < \alpha_i^* < C$ 的支持向量 $x_i$，代入约束 $y_i(w^* x_i + b^*) = 1$，得：
+    \[b^* = y_i - \sum_{j=1}^n \alpha_j^* y_j K(x_j, x_i)\]
+\end{itemize}

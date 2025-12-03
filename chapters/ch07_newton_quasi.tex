@@ -1,0 +1,712 @@
+\chapter{牛顿法和拟牛顿法}
+
+\section{符号说明}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|p{8cm}|}
+\hline
+\textbf{符号} & \textbf{类型} & \textbf{定义与用途} \\ \hline
+$f(\mathbf{x})$ & 标量函数 & 无约束优化问题的目标函数，输入为$n$维优化变量$\mathbf{x}$，输出为实数值。 \\ \hline
+$\nabla f(\mathbf{x})$ & 向量函数 & 目标函数$f(\mathbf{x})$的梯度，输入为$\mathbf{x}$，输出为$n$维梯度向量。 \\ \hline
+$\mathbf{x}_k$ & 向量 & 第$k$步迭代点，$\mathbf{x}_k \in \mathbb{R}^n$；$\mathbf{x}_0$为初始迭代点。 \\ \hline
+$\mathbf{x}^*$ & 向量 & 目标函数$f(\mathbf{x})$的最优解（近似）。 \\ \hline
+$\mathbf{g}_k$ & 向量 & 第$k$步迭代点的梯度，即$\mathbf{g}_k = \nabla f(\mathbf{x}_k)$，$\mathbf{g}_k \in \mathbb{R}^n$。 \\ \hline
+$\mathbf{H}$ & 矩阵 & 目标函数$f(\mathbf{x})$的Hessian矩阵（二阶导数矩阵），$\mathbf{H} \in \mathbb{R}^{n \times n}$；$\mathbf{H}_k = \nabla^2 f(\mathbf{x}_k)$为第$k$步迭代点的Hessian矩阵。 \\ \hline
+$\mathbf{B}_k$ & 矩阵 & BFGS方法中第$k$步的Hessian矩阵近似，$\mathbf{B}_k \in \mathbb{R}^{n \times n}$，满足拟牛顿条件$\mathbf{B}_{k+1}\mathbf{s}_k = \mathbf{y}_k$。 \\ \hline
+$\mathbf{G}_k$ & 矩阵 & $\mathbf{B}_k$的逆矩阵近似（即$\mathbf{G}_k \approx \mathbf{B}_k^{-1}$），$\mathbf{G}_k \in \mathbb{R}^{n \times n}$，用于直接计算搜索方向，避免矩阵求逆。 \\ \hline
+$\mathbf{p}_k$ & 向量 & 第$k$步的搜索方向（下降方向），牛顿法中$\mathbf{p}_k = -\mathbf{H}_k^{-1}\mathbf{g}_k$，BFGS中$\mathbf{p}_k = -\mathbf{G}_k \mathbf{g}_k$。 \\ \hline
+$\alpha_k$ & 标量 & 第$k$步的迭代步长，通过Wolfe条件（Armijo条件+曲率条件）确定，$\alpha_k > 0$。 \\ \hline
+$\mathbf{s}_k$ & 向量 & 第$k$步的变量增量，即$\mathbf{s}_k = \mathbf{x}_{k+1} - \mathbf{x}_k$，反映迭代点的变化量。 \\ \hline
+$\mathbf{y}_k$ & 向量 & 第$k$步的梯度增量，即$\mathbf{y}_k = \mathbf{g}_{k+1} - \mathbf{g}_k$，反映梯度的变化量。 \\ \hline
+\end{tabular}
+\caption{符号说明}
+\end{table}
+
+\section{牛顿法的严格数学建模（复习）}
+
+Newton法是比梯度下降更高效的优化方法，核心是通过\textbf{函数的局部二次近似}确定搜索方向，兼具“局部快速收敛”与“全局有效下降”的特性，其核心逻辑围绕“二阶展开$\to$牛顿步$\to$收敛性”展开：
+
+\subsection{核心思路：函数的局部二次近似}
+
+梯度下降仅用“一阶信息（梯度）”将函数局部近似为线性函数，而Newton法引入“二阶信息（Hessian矩阵）”，将函数局部近似为\textbf{二次函数}（更贴合非凸函数的局部曲率），具体如下：
+
+对迭代点$x_k$，将目标函数$f(x_k+p)$在$x_k$处做二阶泰勒展开（$p$为搜索方向向量）：
+\[
+f(x_k+p) \approx f(x_k) + g_k^\top p + \frac{1}{2}p^\top H_k p
+\]
+其中：
+\begin{itemize}
+    \item $g_k = \nabla f(x_k)$是$f(x)$在$x_k$处的梯度（一阶导数）；
+    \item $H_k = \nabla^2 f(x_k)$是$f(x)$在$x_k$处的Hessian矩阵（二阶导数矩阵），反映函数在$x_k$处的局部曲率。
+\end{itemize}
+
+Newton法的核心是：\textbf{最小化上述二次近似函数}，直接求解使近似函数最小的搜索方向$p$。
+
+\subsection{牛顿步（Newton Step）的推导}
+
+对二阶近似函数关于$p$求导，并令导数为0（二次函数的极值点条件）：
+\[
+\frac{\partial}{\partial p}\left[ f(x_k) + g_k^\top p + \frac{1}{2}p^\top H_k p \right] = g_k + H_k p = 0
+\]
+若Hessian矩阵\textbf{正定}（$H_k \succ 0$，保证二次近似函数是凸函数，极值点为最小值点），则可解出唯一的搜索方向——\textbf{牛顿步}：
+\[
+p_k = -H_k^{-1} g_k
+\]
+
+\subsection{牛顿步的下降性}
+
+牛顿步能保证是“下降方向”的前提是$H_k \succ 0$，证明如下：
+计算梯度与牛顿步的内积（判断方向是否下降的核心指标，内积$<0$则为下降方向）：
+\[
+g_k^\top p_k = g_k^\top \left( -H_k^{-1} g_k \right)
+\]
+因$H_k \succ 0$，其逆矩阵$H_k^{-1}$也正定，故对任意非零向量$g_k$，有$g_k^\top H_k^{-1} g_k > 0$，因此：
+\[
+g_k^\top p_k < 0
+\]
+即牛顿步满足“下降方向”的核心条件。
+
+\subsection{局部二次收敛：牛顿法的核心优势}
+
+当迭代点足够靠近最优解$x^*$时，Newton法会呈现\textbf{二次收敛}（收敛速度远快于梯度下降的线性收敛），严格定义如下：
+
+\subsubsection{收敛条件}
+若满足以下两个前提：
+\begin{enumerate}
+    \item Hessian矩阵$H(x)$在$x^*$的邻域内\textbf{Lipschitz连续}（曲率变化平缓）；
+    \item 初始迭代点$x_0$足够靠近$x^*$（进入“局部收敛域”）。
+\end{enumerate}
+
+\subsubsection{二次收敛公式}
+此时存在常数$C > 0$，使得迭代误差满足：
+\[
+\| x_{k+1} - x^* \| \leq C \cdot \| x_k - x^* \|^2
+\]
+
+\subsubsection{直观意义}
+二次收敛意味着“每次迭代后，误差的有效位数会翻倍”——例如：若第$k$步误差为$10^{-2}$，第$k+1$步误差可降至$10^{-4}$，第$k+2$步可降至$10^{-8}$，接近最优解时收敛极快。
+
+牛顿法也有缺陷，数学层面的问题包括：
+\begin{enumerate}
+    \item \textbf{Hessian构造与求解成本高}：
+    \begin{itemize}
+        \item 构造Hessian矩阵$H_k$需计算$n(n+1)/2$个二阶偏导数（复杂度$O(n^2)$）；
+        \item 求解线性方程组$H_k p_k = -g_k$需$O(n^3)$复杂度（如LU分解），当$n$较大（如大规模优化）时计算成本不可承受。
+    \end{itemize}
+    \item \textbf{Hessian不定导致方向非下降}：
+    若$H_k$不定（非正定时），牛顿方向$p_k = -H_k^{-1} g_k$可能不满足“下降方向”条件（即$g_k^\top p_k \geq 0$），导致迭代点$x_{k+1}$处$f(x_{k+1}) > f(x_k)$，算法不稳定。
+\end{enumerate}
+
+\section{拟牛顿法}
+
+BFGS（Broyden-Fletcher-Goldfarb-Shanno）是最常用的拟牛顿方法之一，主要用于求解无约束优化问题。拟牛顿法的目标是通过逐步逼近目标函数的Hessian矩阵来优化目标函数，而无需显式计算二阶导数。其核心思想是通过逐步更新一个近似Hessian矩阵，使得每一步的更新尽可能接近真实的Hessian矩阵。
+
+\subsection{拟牛顿法的基本框架}
+
+考虑一个无约束优化问题：
+\[
+\min_{x} f(x),
+\]
+其中$f(x)$是一个可微的目标函数，$x \in \mathbb{R}^n$是优化变量。拟牛顿法的基本思路是通过计算一系列梯度来逼近目标函数的Hessian矩阵，而不是直接计算Hessian矩阵。
+
+牛顿法的更新公式为：
+\[
+x_{k+1} = x_k - H_k^{-1} g_k,
+\]
+其中$H_k$是$f(x)$在$x_k$处的Hessian矩阵。由于计算Hessian矩阵代价较高，拟牛顿法通过构造一个近似矩阵$B_k$来代替真实的$H_k$，从而避免显式计算它。
+
+\subsection{BFGS方法}
+
+BFGS是一种常用的拟牛顿方法，给出了如何通过一系列梯度信息更新一个Hessian近似矩阵$B_k$的规则。其核心思想是通过引入变量$s_k = x_{k+1} - x_k$和$y_k = g_{k+1} - g_k$来更新近似Hessian矩阵。
+
+\subsubsection{BFGS 更新公式}
+
+BFGS方法通过以下更新公式计算$B_{k+1}$：
+\[
+B_{k+1} = B_k + \frac{y_k y_k^\top}{y_k^\top s_k} - \frac{B_k s_k s_k^\top B_k}{s_k^\top B_k s_k},
+\]
+其中：
+\begin{itemize}
+    \item $B_k$是第$k$步的Hessian近似。
+    \item $s_k = x_{k+1} - x_k$ 是变量的变化。
+    \item $y_k = g_{k+1} - g_k$ 是梯度的变化。
+\end{itemize}
+
+该公式满足\textbf{割线方程}$B_{k+1}s_k = y_k$，这是对Hessian矩阵$H$性质$H s \approx y$的近似。
+
+公式中两个修正项的直观解释：
+\begin{itemize}
+    \item 第一项$\frac{y_k y_k^\top}{y_k^\top s_k}$：引入了最新的梯度变化信息$y_k$和步长信息$s_k$，是对当前Hessian近似的主要校正。
+    \item 第二项$-\frac{B_k s_k s_k^\top B_k}{s_k^\top B_k s_k}$：移除了旧的、与新步长$s_k$方向相关的信息，为新的信息腾出空间。
+\end{itemize}
+
+\begin{remark}[从矩阵秩的角度理解这个式子]
+\begin{enumerate}
+    \item \textbf{秩1矩阵的基本性质}：若 $ a $ 是一个非零向量，则矩阵 $ a a^\top $ 是\textbf{秩1矩阵}（因为其列向量都可由 $ a $ 线性表示，秩最多为1）。除以一个非零标量（内积 $ a^\top b $ 是标量）不会改变其秩，因此形如 $ \frac{a a^\top}{a^\top b} $ 的矩阵仍为\textbf{秩1矩阵}。
+    \item \textbf{分解式子中的秩1项}：
+    对于更新式 $ B_{k+1} = B_k + \frac{y_k y_k^\top}{y_k^\top s_k} - \frac{B_k s_k s_k^\top B_k}{s_k^\top B_k s_k} $，我们分别分析两个修正项：
+    \begin{itemize}
+        \item 项1：$ \frac{y_k y_k^\top}{y_k^\top s_k} $ 是\textbf{秩1矩阵}（因 $ y_k $ 是非零向量，且 $ y_k^\top s_k \neq 0 $）。
+        \item 项2：令 $ v_k = B_k s_k $（$ v_k $ 是向量），则项2可表示为 $ \frac{v_k v_k^\top}{v_k^\top s_k} $，也是\textbf{秩1矩阵}（因 $ v_k $ 非零且 $ v_k^\top s_k \neq 0 $）。
+    \end{itemize}
+    \item \textbf{秩的变化：“秩2修正”}：整个更新式可看作对 $ B_k $ 进行\textbf{两个秩1矩阵的加减操作}，即：
+    \[ B_{k+1} = B_k + (\text{秩1矩阵}) - (\text{秩1矩阵}) \]
+    根据矩阵秩的不等式：若 $ A, C $ 是秩分别为 $ r_A, r_C $ 的矩阵，则 $ \text{rank}(A + C) \leq r_A + r_C $，且 $ \text{rank}(A - C) \geq |r_A - r_C| $。
+    这里两个修正项都是秩1矩阵，且在拟牛顿法的背景下（满足拟牛顿条件 $ B_{k+1} s_k = y_k $），这两个秩1矩阵\textbf{线性无关}，因此对 $ B_k $ 的修正属于\textbf{秩2修正}（即 $ B_{k+1} $ 与 $ B_k $ 的秩差最多为2）。
+    \item \textbf{拟牛顿法中的秩意义}：在拟牛顿法中，$ B_k $ 是Hessian矩阵的近似。通过这种\textbf{秩2更新}，可以在保持矩阵对称性（或正定性，在一定条件下）的同时，逐步调整 $ B_k $ 的秩结构，使其逼近真实的Hessian矩阵（在算法收敛时）。
+    初始时 $ B_0 $ 通常取满秩矩阵（如单位矩阵），经过每次秩2修正后，$ B_k $ 的秩会逐渐适应Hessian的秩特性，从而实现高效的梯度近似迭代。
+\end{enumerate}
+综上，从秩的角度看，该式子是对 $ B_k $ 进行\textbf{秩2修正}（由两个秩1矩阵的加减构成），通过这种修正来近似Hessian矩阵，同时满足拟牛顿条件，保证迭代的有效性。
+\end{remark}
+
+\subsubsection{推导过程}
+
+\begin{itemize}
+    \item \textbf{目标}：构造一个新的$B_{k+1}$来近似Hessian矩阵，使得在每一步迭代中，拟牛顿方法的更新步长和真实牛顿法的更新步长尽量相似。
+    \item \textbf{确保更新的对称性和正定性}：
+    \begin{itemize}
+        \item 对称性：若$B_k$对称，则$B_{k+1}$也是对称的，因为$y_k y_k^\top$和$B_k s_k s_k^\top B_k$都是对称矩阵。
+        \item 正定性：可以证明，如果初始矩阵$B_0$是正定的，并且线搜索满足Wolfe条件，那么后续所有的$B_k$都会保持正定。
+    \end{itemize}
+\end{itemize}
+
+\begin{remark}[\texorpdfstring{$\mathbf{B}_k \to \mathbf{B}_{k+1}$}{Bk -> Bk+1}构造推导（BFGS框架）]
+\textbf{一、前提与核心定义（统一符号）}
+首先明确推导所需的基础记号、约束条件与优化目标：
+\begin{enumerate}
+    \item \textbf{迭代核心变量}：
+    \begin{itemize}
+        \item 位移向量：$\mathbf{s} = \mathbf{x}_{k+1} - \mathbf{x}_k$（第$k$到$k+1$步的迭代位移）；
+        \item 梯度差分：$\mathbf{y} = \nabla f(\mathbf{x}_{k+1}) - \nabla f(\mathbf{x}_k) = \mathbf{g}_{k+1} - \mathbf{g}_k$（对应Hessian作用于位移的近似）；
+    \end{itemize}
+    \item \textbf{初始近似矩阵}：
+    \begin{itemize}
+        \item 已知$\mathbf{B}_k \succ 0$（对称正定的Hessian近似矩阵），其逆矩阵为$\mathbf{G}_k = \mathbf{B}_k^{-1}$（对称正定的逆Hessian近似）；
+    \end{itemize}
+    \item \textbf{加权范数（度量“矩阵接近度”）}：
+    为量化$\mathbf{B}_{k+1}$与$\mathbf{B}_k$的“改变量”，定义基于$\mathbf{G}_k$的加权内积与范数（保证更新对\textbf{线性变换（单位缩放、坐标变化）不变}，优于仅对正交变换不变的Frobenius范数$\|\cdot\|_F$）：
+    \[
+    \langle \mathbf{X}, \mathbf{Z} \rangle_{\mathbf{G}_k} = \text{tr}(\mathbf{G}_k \mathbf{X} \mathbf{G}_k \mathbf{Z}), \quad \|\mathbf{X}\|_{\mathbf{G}_k}^2 = \langle \mathbf{X}, \mathbf{X} \rangle_{\mathbf{G}_k}
+    \]
+    其中$\text{tr}(\cdot)$为矩阵迹算子；
+    \item \textbf{优化目标}：
+    寻找对称矩阵$\mathbf{B}_{k+1}$，满足两大核心约束：
+    \begin{itemize}
+        \item 割线约束：$\mathbf{B}_{k+1} \mathbf{s} = \mathbf{y}$（拟合“平均曲率”，即拟牛顿条件）；
+        \item 最小改变量：在满足割线约束的所有对称矩阵中，$\mathbf{B}_{k+1}$与$\mathbf{B}_k$在$\|\cdot\|_{\mathbf{G}_k}$范数下最接近。
+    \end{itemize}
+\end{enumerate}
+
+\textbf{二、第一步：“先忘”——构造子空间最优矩阵$\mathbf{B}'$}
+首先在\textbf{子空间$\mathcal{S}_0 = \{\mathbf{B} \mid \mathbf{B} = \mathbf{B}^\top, \mathbf{B} \mathbf{s} = 0\}$} 中，找到与$\mathbf{B}_k$最接近的矩阵$\mathbf{B}'$（即“擦除”$\mathbf{B}_k$中沿$\mathbf{s}$方向的曲率信息，使其满足$\mathbf{B}' \mathbf{s} = 0$）。
+
+\textbf{2.1 优化问题转化（白化变换）}
+直接求解$\mathbf{B}$的优化问题较复杂，通过“白化变换”将其转化为Frobenius范数下的简化问题（利用$\mathbf{G}_k = \mathbf{B}_k^{-1}$的正定性）：
+\begin{enumerate}
+    \item \textbf{白化矩阵定义}：
+    令$\mathbf{C} = \mathbf{G}_k^{1/2} \mathbf{B} \mathbf{G}_k^{1/2}$，其中$\mathbf{G}_k^{1/2}$是$\mathbf{G}_k$的对称平方根（因$\mathbf{G}_k \succ 0$，平方根存在且对称正定）；
+    \item \textbf{初始白化矩阵}：
+    代入$\mathbf{G}_k = \mathbf{B}_k^{-1}$，得初始白化矩阵：
+    \[
+    \mathbf{C}_k = \mathbf{G}_k^{1/2} \mathbf{B}_k \mathbf{G}_k^{1/2} = \mathbf{G}_k^{1/2} \mathbf{G}_k^{-1} \mathbf{G}_k^{1/2} = \mathbf{I}
+    \]
+    其中$\mathbf{I}$为单位矩阵；
+    \item \textbf{位移白化}：
+    令$\tilde{\mathbf{s}} = \mathbf{G}_k^{-1/2} \mathbf{s}$（将位移向量转化到白化空间）。
+\end{enumerate}
+
+\textbf{（1）范数等价转化}
+利用\textbf{迹的循环不变性}（$\text{tr}(\mathbf{AB}) = \text{tr}(\mathbf{BA})$），可证明$\mathbf{B}$与$\mathbf{B}_k$的加权距离等价于白化矩阵的Frobenius距离：
+\[
+\|\mathbf{B} - \mathbf{B}_k\|_{\mathbf{G}_k}^2 = \text{tr}(\mathbf{G}_k (\mathbf{B}-\mathbf{B}_k) \mathbf{G}_k (\mathbf{B}-\mathbf{B}_k))
+\]
+将$\mathbf{B} - \mathbf{B}_k = \mathbf{G}_k^{-1/2} (\mathbf{C} - \mathbf{C}_k) \mathbf{G}_k^{-1/2}$（由$\mathbf{C} = \mathbf{G}_k^{1/2} \mathbf{B} \mathbf{G}_k^{1/2}$变形得）代入，展开后利用迹的循环不变性抵消$\mathbf{G}_k^{1/2}$与$\mathbf{G}_k^{-1/2}$，最终得：
+\[
+\|\mathbf{B} - \mathbf{B}_k\|_{\mathbf{G}_k}^2 = \|\mathbf{C} - \mathbf{I}\|_F^2
+\]
+
+\textbf{（2）约束等价转化}
+割线约束$\mathbf{B} \mathbf{s} = 0$可转化为白化空间的约束：
+\[
+\mathbf{B} \mathbf{s} = 0 \implies \mathbf{G}_k^{1/2} \mathbf{B} \mathbf{G}_k^{1/2} \cdot \mathbf{G}_k^{-1/2} \mathbf{s} = \mathbf{G}_k^{1/2} \mathbf{B} \mathbf{s} = 0 \implies \mathbf{C} \tilde{\mathbf{s}} = 0
+\]
+
+\textbf{（3）转化后的优化问题}
+原问题（加权范数下的约束优化）等价为Frobenius范数下的简化问题：
+\[
+\min_{\mathbf{C} = \mathbf{C}^\top} \frac{1}{2} \|\mathbf{C} - \mathbf{I}\|_F^2 \quad \text{s.t.} \quad \mathbf{C} \tilde{\mathbf{s}} = 0
+\]
+
+\textbf{2.2 求解白化空间优化问题（正交相似变换）}
+通过构造正交基对齐约束，简化$\mathbf{C}$的结构并求解最小值：
+\begin{enumerate}
+    \item \textbf{构造正交矩阵$\mathbf{Q}$}：
+    取正交矩阵$\mathbf{Q} = [\mathbf{q}_1, \mathbf{q}_2, \dots, \mathbf{q}_n]$（满足$\mathbf{Q}^\top \mathbf{Q} = \mathbf{Q} \mathbf{Q}^\top = \mathbf{I}$），其中：
+    \begin{itemize}
+        \item 第一列$\mathbf{q}_1 = \frac{\tilde{\mathbf{s}}}{\|\tilde{\mathbf{s}}\|}$（$\tilde{\mathbf{s}}$的单位向量，因$\mathbf{s} \neq 0$且$\mathbf{G}_k^{-1/2}$可逆，故$\|\tilde{\mathbf{s}}\| \neq 0$）；
+        \item 其余列$\mathbf{q}_2, \dots, \mathbf{q}_n$为$\mathbf{q}_1$正交补空间的标准正交基。
+    \end{itemize}
+    此时$\mathbf{Q}^\top \tilde{\mathbf{s}} = \|\tilde{\mathbf{s}}\| \mathbf{e}_1$（$\mathbf{e}_1 = (1,0,\dots,0)^\top$为标准基向量），因$\mathbf{q}_1^\top \tilde{\mathbf{s}} = \|\tilde{\mathbf{s}}\|$，$\mathbf{q}_j^\top \tilde{\mathbf{s}} = 0$（$j \geq 2$）。
+
+    \item \textbf{分块对角化$\mathbf{C}$}：
+    令$\mathbf{D} = \mathbf{Q}^\top \mathbf{C} \mathbf{Q}$（正交相似变换），则：
+    \begin{itemize}
+        \item 对称性：因$\mathbf{C} = \mathbf{C}^\top$且$\mathbf{Q}$正交，故$\mathbf{D} = \mathbf{D}^\top$；
+        \item 范数不变性：Frobenius范数在正交变换下不变，即$\|\mathbf{C} - \mathbf{I}\|_F^2 = \|\mathbf{D} - \mathbf{I}\|_F^2$；
+        \item 约束转化：$\mathbf{C} \tilde{\mathbf{s}} = 0 \implies \mathbf{D} (\mathbf{Q}^\top \tilde{\mathbf{s}}) = 0 \implies \mathbf{D} (\|\tilde{\mathbf{s}}\| \mathbf{e}_1) = 0 \implies \mathbf{D} \mathbf{e}_1 = 0$（因$\|\tilde{\mathbf{s}}\| \neq 0$）。
+    \end{itemize}
+
+    \item \textbf{最小化目标函数}：
+    由$\mathbf{D} = \mathbf{D}^\top$且$\mathbf{D} \mathbf{e}_1 = 0$，可知$\mathbf{D}$的第一列全为0，对称性导致第一行也全为0，故$\mathbf{D}$可分块为：
+    \[
+    \mathbf{D} = \begin{bmatrix} 0 & \mathbf{0}^\top \\ \mathbf{0} & \mathbf{M} \end{bmatrix}, \quad \mathbf{M} = \mathbf{M}^\top \in \mathbb{R}^{(n-1) \times (n-1)}
+    \]
+    代入目标函数：
+    \[
+    \|\mathbf{D} - \mathbf{I}\|_F^2 = \left\| \begin{bmatrix} -1 & \mathbf{0}^\top \\ \mathbf{0} & \mathbf{M} - \mathbf{I}_{n-1} \end{bmatrix} \right\|_F^2 = 1 + \|\mathbf{M} - \mathbf{I}_{n-1}\|_F^2
+    \]
+    要最小化该式，需$\|\mathbf{M} - \mathbf{I}_{n-1}\|_F^2 = 0$，即$\mathbf{M} = \mathbf{I}_{n-1}$。因此，白化空间的最优解为：
+    \[
+    \mathbf{D}^* = \begin{bmatrix} 0 & \mathbf{0}^\top \\ \mathbf{0} & \mathbf{I}_{n-1} \end{bmatrix} = \mathbf{I} - \mathbf{e}_1 \mathbf{e}_1^\top
+    \]
+\end{enumerate}
+
+\textbf{2.3 反变换回$\mathbf{B}'$（从白化空间到原空间）}
+\begin{enumerate}
+    \item \textbf{从$\mathbf{D}^*$到$\mathbf{C}^*$}：
+    由$\mathbf{D}^* = \mathbf{Q}^\top \mathbf{C}^* \mathbf{Q}$，得$\mathbf{C}^* = \mathbf{Q} \mathbf{D}^* \mathbf{Q}^\top$。代入$\mathbf{D}^* = \mathbf{I} - \mathbf{e}_1 \mathbf{e}_1^\top$，并利用$\mathbf{Q} \mathbf{e}_1 = \mathbf{q}_1 = \frac{\tilde{\mathbf{s}}}{\|\tilde{\mathbf{s}}\|}$，得：
+    \[
+    \mathbf{C}^* = \mathbf{I} - \mathbf{Q} \mathbf{e}_1 \mathbf{e}_1^\top \mathbf{Q}^\top = \mathbf{I} - \frac{\tilde{\mathbf{s}} \tilde{\mathbf{s}}^\top}{\|\tilde{\mathbf{s}}\|^2}
+    \]
+
+    \item \textbf{从$\mathbf{C}^*$到$\mathbf{B}'$}：
+    由$\mathbf{C}^* = \mathbf{G}_k^{1/2} \mathbf{B}' \mathbf{G}_k^{1/2}$，得$\mathbf{B}' = \mathbf{G}_k^{-1/2} \mathbf{C}^* \mathbf{G}_k^{-1/2}$。代入$\mathbf{C}^*$并分拆两项展开：
+    \begin{itemize}
+        \item 第一项：$\mathbf{G}_k^{-1/2} \mathbf{I} \mathbf{G}_k^{-1/2} = \mathbf{G}_k^{-1} = \mathbf{B}_k$（因$\mathbf{G}_k = \mathbf{B}_k^{-1}$）；
+        \item 第二项：$\mathbf{G}_k^{-1/2} \cdot \frac{\tilde{\mathbf{s}} \tilde{\mathbf{s}}^\top}{\|\tilde{\mathbf{s}}\|^2} \cdot \mathbf{G}_k^{-1/2}$。
+    \end{itemize}
+    进一步计算第二项的分子与分母：
+    \begin{itemize}
+        \item 分子：$\mathbf{G}_k^{-1/2} \tilde{\mathbf{s}} = \mathbf{G}_k^{-1/2} \cdot \mathbf{G}_k^{-1/2} \mathbf{s} = \mathbf{G}_k^{-1} \mathbf{s} = \mathbf{B}_k \mathbf{s}$，故分子为$(\mathbf{B}_k \mathbf{s})(\mathbf{B}_k \mathbf{s})^\top = \mathbf{B}_k \mathbf{s} \mathbf{s}^\top \mathbf{B}_k$；
+        \item 分母：$\|\tilde{\mathbf{s}}\|^2 = \tilde{\mathbf{s}}^\top \tilde{\mathbf{s}} = (\mathbf{G}_k^{-1/2} \mathbf{s})^\top (\mathbf{G}_k^{-1/2} \mathbf{s}) = \mathbf{s}^\top \mathbf{G}_k^{-1} \mathbf{s} = \mathbf{s}^\top \mathbf{B}_k \mathbf{s}$。
+    \end{itemize}
+    因此，“先忘”步骤的结果为：
+    \[
+    \mathbf{B}' = \mathbf{B}_k - \frac{\mathbf{B}_k \mathbf{s} \mathbf{s}^\top \mathbf{B}_k}{\mathbf{s}^\top \mathbf{B}_k \mathbf{s}}
+    \]
+    验证约束：$\mathbf{B}' \mathbf{s} = \mathbf{B}_k \mathbf{s} - \frac{\mathbf{B}_k \mathbf{s} \mathbf{s}^\top \mathbf{B}_k \mathbf{s}}{\mathbf{s}^\top \mathbf{B}_k \mathbf{s}} = \mathbf{B}_k \mathbf{s} - \mathbf{B}_k \mathbf{s} = 0$，满足子空间约束。
+\end{enumerate}
+
+\textbf{三、第二步：“再写”——构造修正项$\Delta^+$}
+在$\mathbf{B}'$的基础上，添加最小改动的对称矩阵$\Delta^+$，使$\mathbf{B}_{k+1} = \mathbf{B}' + \Delta^+$满足割线约束$\mathbf{B}_{k+1} \mathbf{s} = \mathbf{y}$。
+
+\textbf{3.1 白化空间的修正项$\Delta_{\mathbf{C}}^+$}
+因$\mathbf{B}' \mathbf{s} = 0$，故割线约束等价于$\Delta^+ \mathbf{s} = \mathbf{y}$。转化到白化空间：
+\begin{enumerate}
+    \item \textbf{梯度差分白化}：令$\tilde{\mathbf{y}} = \mathbf{G}_k^{1/2} \mathbf{y}$（与位移白化对应）；
+    \item \textbf{约束转化}：$\Delta_{\mathbf{C}}^+ \tilde{\mathbf{s}} = \tilde{\mathbf{y}}$（推导同2.1.2，利用$\Delta^+ = \mathbf{G}_k^{-1/2} \Delta_{\mathbf{C}}^+ \mathbf{G}_k^{-1/2}$）。
+\end{enumerate}
+为满足约束且最小化改动，选择\textbf{对称秩-1矩阵}作为$\Delta_{\mathbf{C}}^+$：
+\[
+\Delta_{\mathbf{C}}^+ = \frac{\tilde{\mathbf{y}} \tilde{\mathbf{y}}^\top}{\tilde{\mathbf{y}}^\top \tilde{\mathbf{s}}}
+\]
+验证约束：$\Delta_{\mathbf{C}}^+ \tilde{\mathbf{s}} = \frac{\tilde{\mathbf{y}} (\tilde{\mathbf{y}}^\top \tilde{\mathbf{s}})}{\tilde{\mathbf{y}}^\top \tilde{\mathbf{s}}} = \tilde{\mathbf{y}}$，完全满足。
+
+\textbf{3.2 反变换回$\Delta^+$（原空间修正项）}
+由$\Delta^+ = \mathbf{G}_k^{-1/2} \Delta_{\mathbf{C}}^+ \mathbf{G}_k^{-1/2}$，代入$\Delta_{\mathbf{C}}^+$展开：
+\begin{itemize}
+    \item 分子：$\mathbf{G}_k^{-1/2} \tilde{\mathbf{y}} = \mathbf{G}_k^{-1/2} \cdot \mathbf{G}_k^{1/2} \mathbf{y} = \mathbf{y}$，故分子为$\mathbf{y} \mathbf{y}^\top$；
+    \item 分母：$\tilde{\mathbf{y}}^\top \tilde{\mathbf{s}} = (\mathbf{G}_k^{1/2} \mathbf{y})^\top (\mathbf{G}_k^{-1/2} \mathbf{s}) = \mathbf{y}^\top \mathbf{G}_k^{1/2} \mathbf{G}_k^{-1/2} \mathbf{s} = \mathbf{y}^\top \mathbf{s}$。
+\end{itemize}
+因此，原空间的修正项为：
+\[
+\Delta^+ = \frac{\mathbf{y} \mathbf{y}^\top}{\mathbf{y}^\top \mathbf{s}}
+\]
+验证约束：$\Delta^+ \mathbf{s} = \frac{\mathbf{y} (\mathbf{y}^\top \mathbf{s})}{\mathbf{y}^\top \mathbf{s}} = \mathbf{y}$，满足割线约束要求。
+
+\textbf{四、最终构造：$\mathbf{B}_{k+1}$的表达式与正定性验证}
+\textbf{4.1 $\mathbf{B}_{k+1}$的最终公式}
+合并“先忘”步骤的$\mathbf{B}'$与“再写”步骤的$\Delta^+$，得到BFGS方法中Hessian近似矩阵的更新公式（B-form）：
+\[
+\boxed{\mathbf{B}_{k+1} = \mathbf{B}_k - \frac{\mathbf{B}_k \mathbf{s} \mathbf{s}^\top \mathbf{B}_k}{\mathbf{s}^\top \mathbf{B}_k \mathbf{s}} + \frac{\mathbf{y} \mathbf{y}^\top}{\mathbf{y}^\top \mathbf{s}}}
+\]
+
+\textbf{4.2 正定性验证（保证下降方向）}
+若满足\textbf{曲率条件$\mathbf{s}^\top \mathbf{y} > 0$}（强Wolfe线搜索可保证），则$\mathbf{B}_{k+1} \succ 0$（对称正定），证明如下：
+对任意非零向量$\mathbf{z}$，代入$\mathbf{B}_{k+1}$的表达式得：
+\[
+\mathbf{z}^\top \mathbf{B}_{k+1} \mathbf{z} = \mathbf{z}^\top \mathbf{B}_k \mathbf{z} - \frac{(\mathbf{z}^\top \mathbf{B}_k \mathbf{s})^2}{\mathbf{s}^\top \mathbf{B}_k \mathbf{s}} + \frac{(\mathbf{z}^\top \mathbf{y})^2}{\mathbf{y}^\top \mathbf{s}}
+\]
+由\textbf{Cauchy-Schwarz不等式}，$\frac{(\mathbf{z}^\top \mathbf{B}_k \mathbf{s})^2}{\mathbf{s}^\top \mathbf{B}_k \mathbf{s}} \leq \mathbf{z}^\top \mathbf{B}_k \mathbf{z}$（等号仅当$\mathbf{z}$与$\mathbf{s}$线性相关时成立）。结合$\mathbf{s}^\top \mathbf{y} > 0$，第二项$\frac{(\mathbf{z}^\top \mathbf{y})^2}{\mathbf{y}^\top \mathbf{s}} \geq 0$，且仅当$\mathbf{z}^\top \mathbf{y} = 0$时为0。
+\begin{itemize}
+    \item 若$\mathbf{z}^\top \mathbf{y} \neq 0$：$\mathbf{z}^\top \mathbf{B}_{k+1} \mathbf{z} > 0$；
+    \item 若$\mathbf{z}^\top \mathbf{y} = 0$：$\mathbf{z}^\top \mathbf{B}_{k+1} \mathbf{z} = \mathbf{z}^\top \mathbf{B}_k \mathbf{z} - \frac{(\mathbf{z}^\top \mathbf{B}_k \mathbf{s})^2}{\mathbf{s}^\top \mathbf{B}_k \mathbf{s}} \geq 0$，且仅当$\mathbf{z} = 0$时取等号（因$\mathbf{B}_k \succ 0$）。
+\end{itemize}
+综上，$\mathbf{B}_{k+1} \succ 0$，保证后续搜索方向$\mathbf{p}_k = -\mathbf{G}_{k+1} \mathbf{g}_k$（$\mathbf{G}_{k+1} = \mathbf{B}_{k+1}^{-1}$）为下降方向。
+\end{remark}
+
+\subsection{准牛顿法的其他变种}
+
+除了BFGS，拟牛顿法还有其他变种，例如DFP（Davidon-Fletcher-Powell）方法。DFP的更新规则与BFGS相似，但它直接更新Hessian的逆矩阵近似$G_k$。DFP方法的更新公式为：
+\[
+G_{k+1} = G_k + \frac{s_k s_k^\top}{s_k^\top y_k} - \frac{G_k y_k y_k^\top G_k}{y_k^\top G_k y_k}
+\]
+
+DFP与BFGS实际上是\textbf{对偶关系}。BFGS更新Hessian的近似$B_k$，而DFP更新其逆的近似$G_k$。
+
+\section{收敛性}
+
+\subsection{BFGS的收敛性}
+BFGS的收敛性需分\textbf{目标函数类型}（二次/非二次）和\textbf{线搜索策略}（精确/不精确）讨论，核心依赖"拟牛顿条件"和"近似Hessian矩阵的正定性"。
+
+\subsubsection{1. 二次函数下的收敛性}
+若目标函数为\textbf{严格凸二次函数}（即Hessian矩阵$H$正定且恒定），且采用\textbf{精确线搜索}（即每次步长选择使目标函数沿搜索方向最小化），BFGS具有以下收敛性质：
+\begin{itemize}
+    \item \textbf{有限终止性}：对于$n$维二次函数，BFGS最多迭代$n$步即可收敛到全局最优解。\\
+    原因：二次函数的Hessian恒定，BFGS通过迭代更新的$B_k$会逐步逼近真实$H$，当$B_k = H$时，一步即可达到最优，而理论上最多$n$步可完成逼近。
+    \item \textbf{正定性保持}：若初始近似矩阵$B_0$正定，则所有迭代过程中的$B_k$均保持正定，确保搜索方向始终为"下降方向"（即$-B_k^{-1} g_k$与梯度反向），避免迭代发散。
+\end{itemize}
+
+\subsubsection{2. 非二次函数下的收敛性}
+实际优化问题多为非二次函数（如机器学习中的损失函数），此时需假设目标函数满足\textbf{光滑性和凸性条件}（如二阶导数Lipschitz连续、Hessian在最优解附近正定），BFGS的收敛性质为：
+\begin{itemize}
+    \item \textbf{局部收敛性}：若初始点$x_0$足够接近全局最优解$x^*$，且采用精确/不精确线搜索（如Wolfe条件），BFGS会收敛到$x^*$。\\
+    关键前提：最优解$x^*$处的Hessian$H^* = \nabla^2 f(x^*)$正定，确保迭代过程中梯度方向的"有效性"。
+    \item \textbf{全局收敛性（凸函数下）}：若目标函数为\textbf{严格凸函数}，且采用精确线搜索或满足Wolfe条件的不精确线搜索，BFGS可实现\textbf{全局收敛}（即无论初始点$x_0$如何，最终均收敛到全局最优解）。\\
+    非凸函数下：仅能保证\textbf{局部收敛}（可能收敛到局部最优解），这是多数无约束优化方法的共性（除非结合全局优化策略，如随机初始化）。
+\end{itemize}
+
+\subsection{BFGS的收敛速度：介于梯度下降与牛顿法之间，逼近牛顿法}
+收敛速度衡量迭代序列$\{x_k\}$趋近最优解$x^*$的快慢，常用"收敛阶"定义（如线性收敛、超线性收敛、二次收敛）。BFGS的收敛速度需结合函数类型分析：
+
+\subsubsection{1. 收敛阶的定义（参考基准）}
+\begin{itemize}
+    \item \textbf{线性收敛}：存在常数$0 < c < 1$，使$\lim_{k \to \infty} \frac{\|x_{k+1} - x^*\|}{\|x_k - x^*\|} = c$（如梯度下降法）。
+    \item \textbf{超线性收敛}：$\lim_{k \to \infty} \frac{\|x_{k+1} - x^*\|}{\|x_k - x^*\|} = 0$（比线性快）。
+    \item \textbf{二次收敛}：存在常数$c > 0$，使$\lim_{k \to \infty} \frac{\|x_{k+1} - x^*\|}{\|x_k - x^*\|^2} = c$（如牛顿法，最快）。
+\end{itemize}
+
+\subsubsection{2. BFGS的收敛速度}
+\begin{itemize}
+    \item \textbf{二次函数下}：若采用精确线搜索，BFGS对$n$维二次函数是\textbf{有限收敛}（最多$n$步），本质上比二次收敛更快（无需无限迭代）。
+    \item \textbf{非二次函数下}：在最优解$x^*$附近（满足Hessian正定且Lipschitz连续），BFGS是\textbf{超线性收敛}。\\
+    BFGS的近似Hessian$B_k$满足$\lim_{k \to \infty} \frac{\|(B_k - H^*)p_k\|}{\|p_k\|} = 0$（Dennis-Moré条件），使得迭代步长逐渐接近牛顿法的最优步长，因此收敛速度接近牛顿法，但无需显式计算Hessian。
+\end{itemize}
+
+\subsection{BFGS的最优性：理论性质与实际性能的"最优平衡"}
+BFGS的"最优性"并非指它在所有场景下都是"最好"的优化方法，而是指它在\textbf{计算成本、数值稳定性、收敛性能}三者间达到了工程应用中的"最优权衡"，具体体现在以下方面：
+
+\subsubsection{1. 理论最优性：满足拟牛顿法的核心目标}
+拟牛顿法的核心目标是"用梯度信息逼近Hessian，以降低牛顿法的计算成本"，BFGS在这一目标下满足：
+\begin{itemize}
+    \item \textbf{拟牛顿条件的严格满足}：每次更新的$B_{k+1}$均严格满足$B_{k+1} s_k = y_k$（这是逼近Hessian的核心条件），确保$B_k$对真实Hessian的逼近是"有效"的。
+    \item \textbf{正定性的严格保持}：若$B_0$正定且线搜索满足"充分下降条件"（如Wolfe条件），则所有$B_k$均正定，避免搜索方向变为"上升方向"（这是DFP等方法有时难以保证的，BFGS的数值稳定性更优）。
+\end{itemize}
+
+\subsubsection{2. 实际应用中的最优性：兼顾效率与稳定性}
+\begin{itemize}
+    \item \textbf{计算成本最优}：
+    \begin{itemize}
+        \item 每次迭代仅需计算1次梯度（成本$O(n)$），更新$B_k$的成本为$O(n^2)$（无需计算Hessian的$O(n^3)$成本）。
+        \item 存储成本为$O(n^2)$（仅需存储$B_k$或其逆矩阵$G_k$），适用于中大规模问题（$n$从几百到几万）。
+    \end{itemize}
+    \item \textbf{数值稳定性最优}：\\
+    相比DFP、SR1等其他拟牛顿法，BFGS对"线搜索误差"和"梯度噪声"的容忍度更高，即使采用不精确线搜索（实际应用中常用），也不易出现$B_k$奇异或迭代发散的情况。
+    \item \textbf{收敛性能最优}：\\
+    在相同计算成本下，BFGS的收敛速度远快于梯度下降（线性收敛），且接近牛顿法（二次收敛），同时避免了牛顿法计算Hessian和求解线性方程组的高昂成本，因此在机器学习、工程优化等领域成为"首选方法"之一。
+\end{itemize}
+
+\begin{definition}[Wolfe条件]
+Wolfe条件是\textbf{不精确线搜索}的核心准则。设目标函数为$f(x)$，梯度为$g(x)$，搜索方向为$p_k$，则步长$\alpha_k$需满足：
+\begin{enumerate}
+    \item \textbf{Armijo条件（充分下降条件）}：
+    \[ f(x_k + \alpha_k p_k) \leq f(x_k) + c_1 \alpha_k g_k^\top p_k \]
+    \item \textbf{曲率条件（步长不太小条件）}：
+    \[ g(x_k + \alpha_k p_k)^\top p_k \geq c_2 g_k^\top p_k \]
+\end{enumerate}
+其中 $0 < c_1 < c_2 < 1$（典型值 $c_1 = 10^{-4}, c_2 = 0.9$）。
+\end{definition}
+
+\section{伪代码}
+
+\begin{algorithm}[BFGS拟牛顿优化算法]
+\textbf{输入}：目标函数$f(x)$，梯度函数$\nabla f(x)$，初始点$x_0 \in \mathbb{R}^n$，收敛阈值$\epsilon > 0$，最大迭代次数$T$ \\
+\textbf{输出}：最优解近似$x^*$
+
+\begin{enumerate}
+    \item \textbf{初始化}：
+    \begin{itemize}
+        \item 令$k = 0$，$x_k = x_0$
+        \item 计算梯度$g_k = \nabla f(x_k)$
+        \item 初始化Hessian逆矩阵近似$G_k = I_n$（$n \times n$单位矩阵）
+    \end{itemize}
+
+    \item \textbf{收敛判断}：
+    若$\|g_k\| < \epsilon$，则输出$x^* = x_k$并终止
+
+    \item \textbf{迭代主循环}（当$k < T$时）：
+    \begin{enumerate}
+        \item \textbf{计算搜索方向}：$p_k = -G_k g_k$（下降方向）
+        \item \textbf{线搜索}：寻找步长$\alpha_k > 0$，使其满足Wolfe条件：
+        \[
+        \begin{cases}
+        f(x_k + \alpha_k p_k) \leq f(x_k) + c_1 \alpha_k g_k^\top p_k \\
+        \nabla f(x_k + \alpha_k p_k)^\top p_k \geq c_2 g_k^\top p_k
+        \end{cases}
+        \]
+        \item \textbf{更新迭代点}：$x_{k+1} = x_k + \alpha_k p_k$
+        \item \textbf{更新梯度}：$g_{k+1} = \nabla f(x_{k+1})$
+        \item \textbf{计算增量}：
+        \begin{itemize}
+            \item 变量增量：$s_k = x_{k+1} - x_k$
+            \item 梯度增量：$y_k = g_{k+1} - g_k$
+        \end{itemize}
+        \item \textbf{检查正定性条件}：
+        若$y_k^\top s_k \leq 0$（不满足曲率条件），则令$G_{k+1} = G_k$（跳过更新）；
+        否则，按BFGS公式更新Hessian逆近似：
+        \[
+        G_{k+1} = \left(I - \frac{s_k y_k^\top}{y_k^\top s_k}\right) G_k \left(I - \frac{y_k s_k^\top}{y_k^\top s_k}\right) + \frac{s_k s_k^\top}{y_k^\top s_k}
+        \]
+        \item \textbf{迭代更新}：$k = k + 1$，返回步骤2
+    \end{enumerate}
+
+    \item \textbf{终止}：若达到最大迭代次数，输出$x^* = x_k$
+\end{enumerate}
+\end{algorithm}
+
+\begin{remark}[逆Hessian近似形式（G-form）的推导与使用原因]
+在BFGS拟牛顿法中，\textbf{逆Hessian近似形式（G-form）} 指直接对逆Hessian近似矩阵$\mathbf{G}_k = \mathbf{B}_k^{-1}$（$\mathbf{B}_k$为Hessian近似矩阵）进行更新，而非对$\mathbf{B}_k$（B-form）更新。以下先推导G-form的数学表达式，再详细说明为何优先使用逆BFGS形式。
+
+\textbf{一、G-form（逆Hessian近似）的数学推导}
+G-form的更新公式需从B-form（$\mathbf{B}_{k+1}$的更新）出发，利用\textbf{Woodbury矩阵求逆公式}（适用于秩修正矩阵的逆计算）推导$\mathbf{G}_{k+1} = \mathbf{B}_{k+1}^{-1}$的表达式，核心步骤如下：
+
+\textbf{1. 已知前提与工具}
+\begin{itemize}
+    \item \textbf{B-form更新公式}（已推导的Hessian近似更新）：
+    \[
+    \mathbf{B}_{k+1} = \mathbf{B}_k - \frac{\mathbf{B}_k \mathbf{s}_k \mathbf{s}_k^\top \mathbf{B}_k}{\mathbf{s}_k^\top \mathbf{B}_k \mathbf{s}_k} + \frac{\mathbf{y}_k \mathbf{y}_k^\top}{\mathbf{y}_k^\top \mathbf{s}_k}
+    \]
+    其中$\mathbf{s}_k = \mathbf{x}_{k+1} - \mathbf{x}_k$（位移），$\mathbf{y}_k = \mathbf{g}_{k+1} - \mathbf{g}_k$（梯度差分），且$\mathbf{B}_k \succ 0$（对称正定，故$\mathbf{G}_k = \mathbf{B}_k^{-1}$存在）。
+
+    \item \textbf{Woodbury公式}（秩-$r$修正矩阵的逆）：
+    若矩阵$\mathbf{A}$可逆，$\mathbf{U},\mathbf{V}$为$n \times r$矩阵，$\mathbf{C}$为$r \times r$可逆矩阵，则：
+    \[
+    (\mathbf{A} + \mathbf{U} \mathbf{C} \mathbf{V}^\top)^{-1} = \mathbf{A}^{-1} - \mathbf{A}^{-1} \mathbf{U} (\mathbf{C}^{-1} + \mathbf{V}^\top \mathbf{A}^{-1} \mathbf{U})^{-1} \mathbf{V}^\top \mathbf{A}^{-1}
+    \]
+    本推导中$\mathbf{B}_{k+1} = \mathbf{B}_k + \mathbf{U} \mathbf{M} \mathbf{U}^\top$（秩-2修正，$\mathbf{U}$为$n \times 2$矩阵，$\mathbf{M}$为$2 \times 2$对角矩阵），符合Woodbury公式适用场景。
+\end{itemize}
+
+\textbf{2. 步骤1：将B-form改写为“原矩阵+秩修正”形式}
+令：
+\begin{itemize}
+    \item 秩修正矩阵的列向量：$\mathbf{U} = [\mathbf{y}_k, \mathbf{B}_k \mathbf{s}_k]$（$n \times 2$矩阵）；
+    \item 对角系数矩阵：$\mathbf{M} = \text{diag}\left( \frac{1}{\mathbf{y}_k^\top \mathbf{s}_k}, -\frac{1}{\mathbf{s}_k^\top \mathbf{B}_k \mathbf{s}_k} \right)$（$2 \times 2$矩阵）。
+\end{itemize}
+则B-form可改写为：
+\[
+\mathbf{B}_{k+1} = \mathbf{B}_k + \mathbf{U} \mathbf{M} \mathbf{U}^\top
+\]
+（验证：$\mathbf{U} \mathbf{M} \mathbf{U}^\top = \frac{\mathbf{y}_k \mathbf{y}_k^\top}{\mathbf{y}_k^\top \mathbf{s}_k} - \frac{\mathbf{B}_k \mathbf{s}_k \mathbf{s}_k^\top \mathbf{B}_k}{\mathbf{s}_k^\top \mathbf{B}_k \mathbf{s}_k}$，与B-form一致）。
+
+\textbf{3. 步骤2：应用Woodbury公式求$\mathbf{G}_{k+1} = \mathbf{B}_{k+1}^{-1}$}
+将$\mathbf{A} = \mathbf{B}_k$、$\mathbf{V} = \mathbf{U}$、$\mathbf{C} = \mathbf{M}$代入Woodbury公式，且$\mathbf{G}_k = \mathbf{B}_k^{-1}$，展开计算：
+\begin{enumerate}
+    \item 计算$\mathbf{C}^{-1} = \mathbf{M}^{-1}$（对角矩阵逆为对角元素倒数）：
+    \[
+    \mathbf{M}^{-1} = \text{diag}\left( \mathbf{y}_k^\top \mathbf{s}_k, -\mathbf{s}_k^\top \mathbf{B}_k \mathbf{s}_k \right)
+    \]
+    \item 计算$\mathbf{V}^\top \mathbf{A}^{-1} \mathbf{U} = \mathbf{U}^\top \mathbf{G}_k \mathbf{U}$（$2 \times 2$矩阵）：
+    \[
+    \mathbf{U}^\top \mathbf{G}_k \mathbf{U} = \begin{bmatrix} \mathbf{y}_k^\top \mathbf{G}_k \mathbf{y}_k & \mathbf{y}_k^\top \mathbf{s}_k \\ \mathbf{s}_k^\top \mathbf{y}_k & \mathbf{s}_k^\top \mathbf{B}_k \mathbf{s}_k \end{bmatrix}
+    \]
+    （因$\mathbf{G}_k \mathbf{B}_k = \mathbf{I}$，故$\mathbf{G}_k \mathbf{B}_k \mathbf{s}_k = \mathbf{s}_k$）。
+    \item 计算$\mathbf{C}^{-1} + \mathbf{U}^\top \mathbf{G}_k \mathbf{U}$（记为$\mathbf{S}$，$2 \times 2$矩阵）：
+    令$\rho_k = \frac{1}{\mathbf{y}_k^\top \mathbf{s}_k}$（简化符号），则$\mathbf{y}_k^\top \mathbf{s}_k = \frac{1}{\rho_k}$，代入得：
+    \[
+    \mathbf{S} = \begin{bmatrix} \mathbf{y}_k^\top \mathbf{G}_k \mathbf{y}_k + \frac{1}{\rho_k} & \frac{1}{\rho_k} \\ \frac{1}{\rho_k} & 0 \end{bmatrix}
+    \]
+    求$\mathbf{S}^{-1}$（2阶矩阵逆公式），并代入Woodbury公式展开、化简后，最终得到\textbf{G-form的紧凑更新公式}：
+    \[
+    \boxed{\mathbf{G}_{k+1} = \left( \mathbf{I} - \rho_k \mathbf{s}_k \mathbf{y}_k^\top \right) \mathbf{G}_k \left( \mathbf{I} - \rho_k \mathbf{y}_k \mathbf{s}_k^\top \right) + \rho_k \mathbf{s}_k \mathbf{s}_k^\top}
+    \]
+\end{enumerate}
+
+\textbf{4. G-form的关键性质验证}
+\begin{itemize}
+    \item \textbf{割线条件}：$\mathbf{G}_{k+1} \mathbf{y}_k = \mathbf{s}_k$（与B-form的$\mathbf{B}_{k+1} \mathbf{s}_k = \mathbf{y}_k$等价，保证曲率拟合）；
+    \item \textbf{对称正定}：若$\mathbf{G}_k \succ 0$且$\mathbf{s}_k^\top \mathbf{y}_k > 0$（曲率条件），则$\mathbf{G}_{k+1} \succ 0$（保证搜索方向为下降方向）。
+\end{itemize}
+
+\textbf{二、总结}
+逆BFGS形式（G-form）的核心价值在于\textbf{“以更低的计算/存储成本，保留牛顿方向的高质量性”}：
+\begin{enumerate}
+    \item 推导上，通过Woodbury公式从B-form转化而来，严格满足拟牛顿的割线条件与正定性质；
+    \item 实践上，其搜索方向计算仅需矩阵-向量乘法，且L-BFGS基于G-form实现了“有限记忆+低复杂度”，成为大规模无约束优化（如深度学习、科学计算）的默认基线方法。
+\end{enumerate}
+相比之下，B-form因需解线性方程组、存储成本高，仅在小规模问题（$n \ll 10^3$）中偶尔使用，工程价值远低于G-form。
+\end{remark}
+
+\section{L-BFGS（有限记忆二阶近似）}
+
+L-BFGS（Limited-Memory BFGS）的核心是\textbf{放弃显式存储$n \times n$的逆Hessian近似$\mathbf{G}_k$}，仅保留最近$m$对曲率信息$(\mathbf{s}_i, \mathbf{y}_i)$（$m \in [5,20]$，远小于变量维度$n$），通过“两环递推”在线构造$\mathbf{G}_k \mathbf{v}$（$\mathbf{v}$为任意向量，通常取梯度$\mathbf{g}_k$）的结果，实现“低内存+低复杂度”的二阶优化。
+
+\subsection{推导起点：BFGS的G-form递推关系}
+L-BFGS源于BFGS的逆Hessian更新公式（G-form）。回顾已推导的G-form：
+\[
+\mathbf{G}_{k+1} = \underbrace{(\mathbf{I} - \rho_k \mathbf{s}_k \mathbf{y}_k^\top)}_{V_k} \mathbf{G}_k \underbrace{(\mathbf{I} - \rho_k \mathbf{y}_k \mathbf{s}_k^\top)}_{W_k} + \underbrace{\rho_k \mathbf{s}_k \mathbf{s}_k^\top}_{R_k} \tag{1}
+\]
+其中：
+\begin{itemize}
+    \item $V_k, W_k$为“投影矩阵”（秩-$n-1$，用于消除旧曲率中与$\mathbf{s}_k$相关的冗余信息）；
+    \item $R_k$为“秩-1修正项”（用于注入新曲率$(\mathbf{s}_k, \mathbf{y}_k)$）。
+\end{itemize}
+
+\textbf{关键观察：$\mathbf{G}_k$的“乘向量算子”属性}
+L-BFGS不直接存储$\mathbf{G}_k$，而是关注$\mathbf{G}_k$对任意向量$\mathbf{v}$的作用（记为$\mathbf{G}_k \mathbf{v}$）。对式(1)两边同时右乘$\mathbf{v}$，展开得：
+\[
+\mathbf{G}_{k+1} \mathbf{v} = V_k \cdot \left( \mathbf{G}_k \cdot (W_k^\top \mathbf{v}) \right) + R_k \mathbf{v} \tag{2}
+\]
+上式揭示：$\mathbf{G}_{k+1} \mathbf{v}$可由$\mathbf{G}_k$对“预处理后的$\mathbf{v}$”（即$W_k^\top \mathbf{v}$）的作用，再经$V_k$投影和$R_k$修正得到。\textbf{递推展开该式}，即可用历史$\{(\mathbf{s}_i, \mathbf{y}_i)\}$和初始$\mathbf{G}_0$表示$\mathbf{G}_k \mathbf{v}$，无需显式$\mathbf{G}_k$。
+
+\subsection{Step 1：递推展开\texorpdfstring{$\mathbf{G}_k \mathbf{v}$}{G_k v}}
+假设保留最近$m$对曲率信息$(\mathbf{s}_{k-m}, \mathbf{y}_{k-m}), \dots, (\mathbf{s}_{k-1}, \mathbf{y}_{k-1})$，对式(2)从$\mathbf{G}_k$反向递推至$\mathbf{G}_{k-m}$（初始逆Hessian近似，通常取缩放单位矩阵$\mathbf{G}_0 = \gamma_k \mathbf{I}$）：
+\begin{enumerate}
+    \item 对$\mathbf{G}_k$：$\mathbf{G}_k \mathbf{v} = V_{k-1} \cdot \left( \mathbf{G}_{k-1} \cdot (W_{k-1}^\top \mathbf{v}) \right) + R_{k-1} \mathbf{v}$
+    \item 对$\mathbf{G}_{k-1}$：$\mathbf{G}_{k-1} \cdot (W_{k-1}^\top \mathbf{v}) = V_{k-2} \cdot \left( \mathbf{G}_{k-2} \cdot (W_{k-2}^\top \cdot W_{k-1}^\top \mathbf{v}) \right) + R_{k-2} \cdot (W_{k-1}^\top \mathbf{v})$
+    \item 以此类推，直到$\mathbf{G}_{k-m}$：
+    \[
+    \mathbf{G}_k \mathbf{v} = V_{k-1} V_{k-2} \dots V_{k-m} \cdot \left( \mathbf{G}_{k-m} \cdot (W_{k-m}^\top \dots W_{k-2}^\top W_{k-1}^\top \mathbf{v}) \right) + \text{秩-1修正项总和} \tag{3}
+    \]
+\end{enumerate}
+式(3)可拆分为两部分：
+\begin{itemize}
+    \item \textbf{右乘链}：$W_{k-m}^\top \dots W_{k-1}^\top \mathbf{v}$（对应“反向环”，处理所有$W_i^\top$对$\mathbf{v}$的预处理）；
+    \item \textbf{左乘链+修正项}：$V_{k-m} \dots V_{k-1} \cdot (\mathbf{G}_0 \cdot \text{右乘结果}) + \text{修正项}$（对应“正向环”，处理$V_i$投影和$R_i$修正）。
+\end{itemize}
+
+\subsection{Step 2：反向环（Right Loop）——处理右乘链}
+反向环的目标是计算“预处理后的向量”$\mathbf{q}$，即式(3)中$\mathbf{G}_0$的输入：$\mathbf{q} = W_{k-m}^\top \dots W_{k-1}^\top \mathbf{v}$。
+
+\textbf{3.1 单个$W_i^\top$的作用}
+由$W_i = \mathbf{I} - \rho_i \mathbf{y}_i \mathbf{s}_i^\top$，其转置为$W_i^\top = \mathbf{I} - \rho_i \mathbf{s}_i \mathbf{y}_i^\top$（因$\mathbf{s}_i \mathbf{y}_i^\top$的转置为$\mathbf{y}_i \mathbf{s}_i^\top$）。对任意向量$\mathbf{z}$，$W_i^\top \mathbf{z}$的计算为：
+\[
+W_i^\top \mathbf{z} = \mathbf{z} - \rho_i \mathbf{s}_i (\mathbf{y}_i^\top \mathbf{z}) \tag{4}
+\]
+但结合递推顺序（从$i=k-1$到$i=k-m$），需定义\textbf{中间系数$\alpha_i$} 简化计算：令$\alpha_i = \rho_i (\mathbf{s}_i^\top \mathbf{z})$，则式(4)可改写为：
+\[
+\mathbf{z} \leftarrow \mathbf{z} - \alpha_i \mathbf{y}_i \tag{5}
+\]
+（注：$\alpha_i$记录了$\mathbf{s}_i$与当前$\mathbf{z}$的内积信息，后续正向环需复用该系数，避免重复计算。）
+
+\textbf{3.2 反向环完整流程}
+初始化$\mathbf{q} = \mathbf{v}$（初始向量，若计算搜索方向则$\mathbf{v} = \mathbf{g}_k$），从最近的曲率对开始，自后向前迭代（$i = k-1, k-2, \dots, k-m$）：
+\[
+\begin{cases}
+\alpha_i = \rho_i \cdot \mathbf{s}_i^\top \mathbf{q} \\
+\mathbf{q} = \mathbf{q} - \alpha_i \cdot \mathbf{y}_i
+\end{cases} \tag{6}
+\]
+\textbf{作用}：通过$m$次迭代，将所有$W_i^\top$的作用“吸收”到$\mathbf{q}$中，得到$\mathbf{q} = W_{k-m}^\top \dots W_{k-1}^\top \mathbf{v}$，为后续$\mathbf{G}_0$作用做准备。
+
+\subsection{Step 3：初始缩放（Initial Scaling）——\texorpdfstring{$\mathbf{G}_0$}{G_0}的作用}
+L-BFGS的初始逆Hessian近似$\mathbf{G}_0$不直接取$\mathbf{I}$（单位矩阵），而是取\textbf{缩放单位矩阵}，目的是让$\mathbf{G}_0$的尺度接近真实逆Hessian$\nabla^2 f(\mathbf{x}_k)^{-1}$的尺度，提升方向质量。
+
+\textbf{4.1 缩放系数$\gamma_k$的选择}
+缩放系数$\gamma_k$由最近一次的曲率对$(\mathbf{s}_{k-1}, \mathbf{y}_{k-1})$计算，满足“模拟Hessian的对角尺度”：
+\[
+\gamma_k = \frac{\mathbf{s}_{k-1}^\top \mathbf{y}_{k-1}}{\mathbf{y}_{k-1}^\top \mathbf{y}_{k-1}} \tag{7}
+\]
+\textbf{物理意义}：$\mathbf{s}_{k-1}^\top \mathbf{y}_{k-1}$是“平均曲率”的近似（$\mathbf{y}_{k-1} \approx \nabla^2 f(\bar{\mathbf{x}}) \mathbf{s}_{k-1}$，故$\mathbf{s}_{k-1}^\top \mathbf{y}_{k-1} \approx \mathbf{s}_{k-1}^\top \nabla^2 f(\bar{\mathbf{x}}) \mathbf{s}_{k-1}$），$\gamma_k$相当于$\nabla^2 f(\bar{\mathbf{x}})^{-1}$的“对角平均”，确保$\mathbf{G}_0 = \gamma_k \mathbf{I}$的尺度合理。
+
+\textbf{4.2 初始缩放计算}
+对反向环得到的$\mathbf{q}$，施加$\mathbf{G}_0$的作用：
+\[
+\mathbf{r} = \gamma_k \cdot \mathbf{q} \tag{8}
+\]
+此时$\mathbf{r} = \mathbf{G}_0 \cdot \mathbf{q} = \gamma_k W_{k-m}^\top \dots W_{k-1}^\top \mathbf{v}$，对应式(3)中$\mathbf{G}_{k-m} \cdot (\text{右乘结果})$。
+
+\subsection{Step 4：正向环（Left Loop）——处理左乘链与修正项}
+正向环的目标是将式(3)中的“左乘链$V_{k-m} \dots V_{k-1}$”和“秩-1修正项总和”融入$\mathbf{r}$，最终得到$\mathbf{G}_k \mathbf{v}$。
+
+\textbf{5.1 单个$V_i$与$R_i$的作用}
+由$V_i = \mathbf{I} - \rho_i \mathbf{s}_i \mathbf{y}_i^\top$和$R_i = \rho_i \mathbf{s}_i \mathbf{s}_i^\top$，结合式(2)的递推逻辑，对任意向量$\mathbf{z}$，$V_i \mathbf{z} + R_i \mathbf{v}$的计算为：
+\[
+V_i \mathbf{z} + R_i \mathbf{v} = \mathbf{z} - \rho_i \mathbf{s}_i (\mathbf{y}_i^\top \mathbf{z}) + \rho_i \mathbf{s}_i (\mathbf{s}_i^\top \mathbf{v}) \tag{9}
+\]
+利用反向环中已存储的$\alpha_i = \rho_i (\mathbf{s}_i^\top \mathbf{v})$（式(6)），定义\textbf{中间系数$\beta_i = \rho_i (\mathbf{y}_i^\top \mathbf{z})$}，则式(9)可简化为：
+\[
+\mathbf{z} \leftarrow \mathbf{z} + \mathbf{s}_i (\alpha_i - \beta_i) \tag{10}
+\]
+\textbf{推导验证}：
+\[
+\mathbf{z} - \beta_i \mathbf{s}_i + \alpha_i \mathbf{s}_i = \mathbf{z} + \mathbf{s}_i (\alpha_i - \beta_i)
+\]
+完全匹配式(9)，且复用了反向环的$\alpha_i$，避免重复计算$\mathbf{s}_i^\top \mathbf{v}$。
+
+\textbf{5.2 正向环完整流程}
+从最早保留的曲率对开始，自前向后迭代（$i = k-m, k-m+1, \dots, k-1$）：
+\[
+\begin{cases}
+\beta_i = \rho_i \cdot \mathbf{y}_i^\top \mathbf{r} \\
+\mathbf{r} = \mathbf{r} + \mathbf{s}_i \cdot (\alpha_i - \beta_i)
+\end{cases} \tag{11}
+\]
+\textbf{作用}：通过$m$次迭代，将所有$V_i$的左乘作用和$R_i$的秩-1修正融入$\mathbf{r}$，最终$\mathbf{r}$即为$\mathbf{G}_k \mathbf{v}$的结果：
+\[
+\mathbf{r} = \mathbf{G}_k \mathbf{v} \tag{12}
+\]
+
+\subsection{Step 5：L-BFGS搜索方向与迭代流程}
+当$\mathbf{v} = \mathbf{g}_k$（当前梯度）时，由式(12)得$\mathbf{r} = \mathbf{G}_k \mathbf{g}_k$，因此\textbf{L-BFGS的搜索方向}为：
+\[
+\mathbf{p}_k = -\mathbf{r} = -\mathbf{G}_k \mathbf{g}_k \tag{13}
+\]
+（与BFGS方向一致，保证是下降方向，因$\mathbf{G}_k \succ 0$且$\mathbf{g}_k^\top \mathbf{p}_k = -\mathbf{g}_k^\top \mathbf{G}_k \mathbf{g}_k < 0$）。
+
+\begin{algorithm}[L-BFGS完整迭代流程]
+\begin{enumerate}
+    \item \textbf{初始化}：
+    \begin{itemize}
+        \item 初始点$\mathbf{x}_0$，最大记忆数$m$，线搜索参数（强Wolfe），容忍度$\text{tol}$；
+        \item 清空存储队列$\mathcal{S} = []$（存$\mathbf{s}_i$）、$\mathcal{Y} = []$（存$\mathbf{y}_i$），$k=0$；
+        \item 计算$\mathbf{g}_0 = \nabla f(\mathbf{x}_0)$，若$\|\mathbf{g}_0\| \leq \text{tol}$，停止。
+    \end{itemize}
+
+    \item \textbf{方向计算}：
+    \begin{itemize}
+        \item 若$k=0$（无历史曲率）：取$\mathbf{p}_0 = -\gamma_0 \mathbf{g}_0$（$\gamma_0$取1或经验值）；
+        \item 若$k \geq 1$：执行“反向环（式6）$\to$ 初始缩放（式8）$\to$ 正向环（式11）”，得$\mathbf{p}_k = -\mathbf{r}$。
+    \end{itemize}
+
+    \item \textbf{线搜索}：
+    用强Wolfe条件求步长$\alpha_k > 0$，满足：
+    \[
+    f(\mathbf{x}_k + \alpha_k \mathbf{p}_k) \leq f(\mathbf{x}_k) + c_1 \alpha_k \mathbf{g}_k^\top \mathbf{p}_k, \quad |\mathbf{g}(\mathbf{x}_k + \alpha_k \mathbf{p}_k)^\top \mathbf{p}_k| \leq c_2 |\mathbf{g}_k^\top \mathbf{p}_k|
+    \]
+    （$c_1 \in (0,1), c_2 \in (c_1,1)$，强Wolfe保证$\mathbf{s}_k^\top \mathbf{y}_k > 0$，即曲率条件成立）。
+
+    \item \textbf{更新与存储管理}：
+    \begin{itemize}
+        \item 计算$\mathbf{x}_{k+1} = \mathbf{x}_k + \alpha_k \mathbf{p}_k$，$\mathbf{s}_k = \alpha_k \mathbf{p}_k$，$\mathbf{g}_{k+1} = \nabla f(\mathbf{x}_{k+1})$，$\mathbf{y}_k = \mathbf{g}_{k+1} - \mathbf{g}_k$；
+        \item 若$\mathbf{s}_k^\top \mathbf{y}_k > 0$（曲率条件）：将$\mathbf{s}_k$加入$\mathcal{S}$，$\mathbf{y}_k$加入$\mathcal{Y}$；若队列长度$>m$，删除最早的$\mathbf{s}_{k-m}$和$\mathbf{y}_{k-m}$；
+        \item 计算$\gamma_{k+1} = \mathbf{s}_k^\top \mathbf{y}_k / (\mathbf{y}_k^\top \mathbf{y}_k)$（供下次初始缩放）。
+    \end{itemize}
+
+    \item \textbf{终止判断}：
+    若$\|\mathbf{g}_{k+1}\| \leq \text{tol}$，停止；否则$k=k+1$，返回步骤2。
+\end{enumerate}
+\end{algorithm}
+
+\subsection{关键性质验证}
+\begin{enumerate}
+    \item \textbf{割线条件保持}：L-BFGS的两环递推严格继承BFGS的割线条件$\mathbf{G}_k \mathbf{y}_i = \mathbf{s}_i$（$i = k-m, \dots, k-1$），确保曲率拟合的准确性；
+    \item \textbf{正定性保证}：若所有保留的$\mathbf{s}_i^\top \mathbf{y}_i > 0$，则$\mathbf{G}_k \succ 0$，搜索方向$\mathbf{p}_k$必为下降方向；
+    \item \textbf{复杂度优势}：
+    \begin{itemize}
+        \item 内存复杂度：仅存储$2m$个$n$维向量（$\mathcal{S}$和$\mathcal{Y}$），为$O(nm)$（标准BFGS为$O(n^2)$）；
+        \item 时间复杂度：每次方向计算需$2m$次向量内积和$2m$次向量加法，为$O(nm)$（标准BFGS为$O(n^2)$），适配大规模问题（$n \gtrsim 10^5$）。
+    \end{itemize}
+\end{enumerate}
+
+L-BFGS的推导核心是\textbf{“将G-form的矩阵递推转化为向量操作”}：通过反向环吸收右乘投影、正向环融合左乘投影与秩-1修正，仅用$m$对历史曲率对在线模拟$\mathbf{G}_k \mathbf{v}$的计算，既保留了BFGS的二阶收敛性，又解决了标准BFGS的内存瓶颈。其本质是“用少量历史信息近似逆Hessian”，是大规模无约束优化（如深度学习、科学计算）的默认基线方法。
